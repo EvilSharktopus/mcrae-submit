@@ -1,0 +1,65 @@
+/* src/styles/marking.css */
+.marking-page { display: flex; flex-direction: column; height: calc(100vh - 52px); }
+
+.marking-header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 16px; background: var(--bg-nav);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.marking-header__title { font-size: 15px; font-weight: 700; }
+.marking-header__sub { font-size: 12px; color: var(--text-dim); }
+
+.marking-split {
+  display: grid; grid-template-columns: 1fr 1fr;
+  flex: 1; overflow: hidden;
+}
+.marking-pane {
+  padding: 20px; overflow-y: auto; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.marking-pane:last-child { border-right: none; }
+.marking-pane__label {
+  font-size: 11px; font-weight: 700; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.marking-total { color: var(--accent-bright); font-size: 14px; font-weight: 700; text-transform: none; letter-spacing: 0; }
+.marking-response {
+  font-size: 14px; line-height: 1.7; color: var(--text); white-space: pre-wrap;
+}
+
+/* Rubric */
+.rubric-categories { display: flex; flex-direction: column; gap: 14px; }
+.rubric-category {}
+.rubric-category__name {
+  font-size: 13px; font-weight: 600; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.rubric-category__points { color: var(--success); font-size: 12px; }
+.rubric-descriptors { display: flex; flex-direction: column; gap: 5px; }
+.rubric-descriptor {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  color: var(--text); font-family: inherit; font-size: 13px;
+  padding: 8px 12px; border-radius: var(--radius);
+  cursor: pointer; text-align: left; transition: all 0.12s;
+}
+.rubric-descriptor:hover { border-color: var(--accent); }
+.rubric-descriptor.selected { border-color: var(--success); background: rgba(76,175,130,0.12); }
+.rubric-descriptor__points {
+  font-weight: 700; color: var(--accent); min-width: 28px; flex-shrink: 0;
+}
+.rubric-descriptor.selected .rubric-descriptor__points { color: var(--success); }
+.rubric-descriptor__text { color: var(--text-dim); }
+
+.marking-feedback {
+  background: var(--bg-input); border: 1px solid var(--border);
+  color: var(--text); font-family: inherit; font-size: 14px; line-height: 1.6;
+  padding: 10px; border-radius: var(--radius); resize: vertical; outline: none;
+  transition: border-color 0.15s; width: 100%;
+}
+.marking-feedback:focus { border-color: var(--accent); }
+
+@media (max-width: 700px) {
+  .marking-split { grid-template-columns: 1fr; }
+  .marking-pane { border-right: none; border-bottom: 1px solid var(--border); }
+}

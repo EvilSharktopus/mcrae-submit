@@ -1,0 +1,15 @@
+/* src/styles/dashboard.css */
+.dashboard-assignment-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; margin-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.dashboard-assignment-header h2 { font-size: 15px; font-weight: 700; }
+
+.dashboard-submission-row {
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: space-between; gap: 12px;
+  transition: background 0.12s;
+}
+.dashboard-submission-row:hover { background: var(--bg-hover); }
+.dashboard-submission-row__student { display: flex; flex-direction: column; gap: 2px; }
+.dashboard-submission-row__email { font-size: 12px; color: var(--text-dim); }

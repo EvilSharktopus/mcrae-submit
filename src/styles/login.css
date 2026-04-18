@@ -1,0 +1,22 @@
+/* src/styles/login.css */
+.login-page {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; background: var(--bg);
+}
+.login-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 40px 36px;
+  text-align: center; width: 100%; max-width: 380px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.login-logo__img { width: 52px; height: 52px; object-fit: contain; border-radius: 8px; }
+.login-title { font-size: 22px; font-weight: 700; color: var(--text); }
+.login-subtitle { font-size: 13px; color: var(--text-dim); margin-bottom: 8px; }
+.login-btn {
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+  width: 100%; padding: 10px 16px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  color: var(--text); font-family: inherit; font-size: 14px; font-weight: 500;
+  border-radius: var(--radius); cursor: pointer; transition: all 0.15s;
+}
+.login-btn:hover { border-color: var(--accent); background: var(--bg-hover); }
