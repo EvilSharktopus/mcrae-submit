@@ -14,19 +14,23 @@ export default function AssignmentList() {
 
   useEffect(() => {
     async function load() {
-      const [aSnap, sSnap] = await Promise.all([
-        getDocs(query(collection(db, 'assignments'), orderBy('course'))),
-        getDocs(query(collection(db, 'submissions'))),
-      ]);
-      setAssignments(aSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      // Build map: assignmentId → submission (for this student)
-      const subMap = {};
-      sSnap.docs.forEach(d => {
-        const s = d.data();
-        if (s.studentEmail === user.email) subMap[s.assignmentId] = s;
-      });
-      setSubmissions(subMap);
-      setLoading(false);
+      try {
+        const [aSnap, sSnap] = await Promise.all([
+          getDocs(query(collection(db, 'assignments'), orderBy('course'))),
+          getDocs(query(collection(db, 'submissions'), where('studentEmail', '==', user.email))),
+        ]);
+        setAssignments(aSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const subMap = {};
+        sSnap.docs.forEach(d => {
+          const s = d.data();
+          subMap[s.assignmentId] = s;
+        });
+        setSubmissions(subMap);
+      } catch (err) {
+        console.error('Failed to load assignments:', err);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, [user.email]);
