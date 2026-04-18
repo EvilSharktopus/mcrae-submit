@@ -1,7 +1,13 @@
 // src/auth/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../firebase';
-import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import {
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut,
+} from 'firebase/auth';
 
 const TEACHER_EMAIL = import.meta.env.VITE_TEACHER_EMAIL;
 
@@ -12,15 +18,20 @@ export function AuthProvider({ children }) {
   const [isTeacher, setIsTeacher] = useState(false);
 
   useEffect(() => {
+    // Handle redirect result after Google sign-in
+    getRedirectResult(auth).catch((err) => {
+      console.error('Redirect sign-in error:', err);
+    });
+
     return onAuthStateChanged(auth, (u) => {
       setUser(u);
       setIsTeacher(u?.email === TEACHER_EMAIL);
     });
   }, []);
 
-  const signIn = async () => {
+  const signIn = () => {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    signInWithRedirect(auth, provider);
   };
 
   const signOutUser = () => signOut(auth);
