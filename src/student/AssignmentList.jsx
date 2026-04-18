@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
 
 export default function AssignmentList() {
@@ -16,7 +16,7 @@ export default function AssignmentList() {
     async function load() {
       try {
         const [aSnap, sSnap] = await Promise.all([
-          getDocs(query(collection(db, 'assignments'), orderBy('course'))),
+          getDocs(collection(db, 'assignments')),
           getDocs(query(collection(db, 'submissions'), where('studentEmail', '==', user.email))),
         ]);
         setAssignments(aSnap.docs.map(d => ({ id: d.id, ...d.data() })));
