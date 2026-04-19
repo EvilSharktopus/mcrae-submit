@@ -219,20 +219,64 @@ function AssignmentForm({ rubrics, onSaved }) {
 }
 
 // ── Saved Lists ─────────────────────────────────────────────────────────────
-function SavedRubrics({ rubrics }) {
+function SavedRubrics({ rubrics, assignments, onAssignmentUpdate }) {
+  const [expandedId, setExpandedId] = useState(null);
   if (!rubrics.length) return null;
   return (
     <div className="setup-section">
       <h3 className="setup-list-title">Saved Rubrics ({rubrics.length})</h3>
-      {rubrics.map(r => (
-        <div key={r.id} className="card setup-list-item">
-          <strong>{r.name}</strong>
-          <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{r.categories?.length || 0} categories</span>
-        </div>
-      ))}
+      {rubrics.map(r => {
+        const isExpanded = expandedId === r.id;
+        const activeAssignments = assignments.filter(a => !a.archived);
+        return (
+          <div key={r.id} className="card" style={{ marginBottom: 8, padding: 0, overflow: 'hidden' }}>
+            {/* Header row */}
+            <div
+              className="setup-list-item"
+              style={{ cursor: 'pointer', padding: '10px 14px' }}
+              onClick={() => setExpandedId(isExpanded ? null : r.id)}
+            >
+              <strong style={{ flex: 1 }}>{r.name}</strong>
+              <span style={{ fontSize: 12, color: 'var(--text-dim)', marginRight: 12 }}>
+                {r.categories?.length || 0} categories
+              </span>
+              <span style={{ fontSize: 12, color: 'var(--accent)' }}>
+                {isExpanded ? '▲ Close' : '▼ Apply to assignments'}
+              </span>
+            </div>
+            {/* Expandable assignment checklist */}
+            {isExpanded && (
+              <div style={{ borderTop: '1px solid var(--border)', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {activeAssignments.length === 0 && (
+                  <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>No assignments registered yet.</span>
+                )}
+                {activeAssignments.map(a => {
+                  const checked = a.rubricId === r.id;
+                  return (
+                    <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={async e => {
+                          const newRubricId = e.target.checked ? r.id : null;
+                          await updateDoc(doc(db, 'assignments', a.id), { rubricId: newRubricId });
+                          onAssignmentUpdate?.(a.id, { rubricId: newRubricId });
+                        }}
+                      />
+                      <span style={{ flex: 1 }}>{a.name}</span>
+                      <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>{a.course} {a.stream}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
+
 
 function SavedAssignments({ assignments, rubrics, onDelete, onUpdate }) {
   if (!assignments.length) return null;
@@ -370,7 +414,11 @@ export default function Setup() {
       <div className="setup-columns">
         <div>
           <RubricBuilder onSaved={load} />
-          <SavedRubrics rubrics={rubrics} />
+          <SavedRubrics
+            rubrics={rubrics}
+            assignments={assignments}
+            onAssignmentUpdate={(id, changes) => setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a))}
+          />
         </div>
         <div>
           <AssignmentForm rubrics={rubrics} onSaved={load} />
