@@ -25,7 +25,14 @@
 }
 .marking-total { color: var(--accent-bright); font-size: 14px; font-weight: 700; text-transform: none; letter-spacing: 0; }
 .marking-response {
-  font-size: 14px; line-height: 1.7; color: var(--text); white-space: pre-wrap;
+  font-size: 14px; line-height: 1.8; color: var(--text);
+  white-space: pre-wrap;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  flex: 1;
+  min-height: 200px;
 }
 
 /* ── Rubric tier UI ── */
