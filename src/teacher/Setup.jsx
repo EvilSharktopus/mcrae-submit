@@ -160,8 +160,6 @@ function RubricBuilder({ onSaved }) {
 }
 
 // ── Assignment Registration ─────────────────────────────────────────────────
-const COURSES = ['Social 9', 'Social 10', 'Social 20', 'Social 30'];
-const STREAMS = ['', '10-1', '10-2', '20-1', '20-2', '30-1', '30-2'];
 
 function AssignmentForm({ rubrics, onSaved }) {
   const [form, setForm] = useState({ name: '', course: 'Social 9', stream: '', docUrl: '', rubricId: '' });
@@ -196,7 +194,8 @@ function AssignmentForm({ rubrics, onSaved }) {
         <div className="field">
           <label>Stream</label>
           <select value={form.stream} onChange={e => set('stream', e.target.value)}>
-            {STREAMS.map(s => <option key={s} value={s}>{s || 'All streams (Social 9)'}</option>)}
+            <option value="">— no stream —</option>
+            {(STREAMS_FOR[form.course] || []).map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div className="field">
@@ -331,6 +330,103 @@ function SavedRubrics({ rubrics, assignments, onAssignmentUpdate }) {
 }
 
 
+const COURSES = ['Social 9', 'Social 10', 'Social 20', 'Social 30'];
+const STREAMS_FOR = {
+  'Social 9':  ['-1', '-2'],
+  'Social 10': ['-1', '-2'],
+  'Social 20': ['-1', '-2'],
+  'Social 30': ['-1', '-2'],
+};
+const selStyle = { fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)' };
+
+function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
+  const [copyOpen,   setCopyOpen]   = useState(false);
+  const [tgtCourse,  setTgtCourse]  = useState(COURSES[0]);
+  const [tgtStream,  setTgtStream]  = useState('-1');
+  const [copying,    setCopying]    = useState(false);
+
+  const handleCopy = async () => {
+    setCopying(true);
+    try {
+      await addDoc(collection(db, 'assignments'), {
+        name:     a.name,
+        course:   tgtCourse,
+        stream:   tgtStream,
+        docUrl:   a.docUrl || '',
+        isOpen:   false,
+        rubricId: a.rubricId || null,
+      });
+      setCopyOpen(false);
+      onDelete?.(); // reload to show new entry
+    } finally { setCopying(false); }
+  };
+
+  return (
+    <div style={{ borderTop: '1px solid var(--border)' }}>
+      {/* Main row */}
+      <div className="setup-list-item" style={{ flexWrap: 'wrap', gap: 8, padding: '8px 14px' }}>
+        <span style={{ flex: 1, minWidth: 140, fontWeight: 600, fontSize: 13 }}>{a.name}</span>
+
+        {/* Course dropdown */}
+        <select style={selStyle} value={a.course} onChange={async e => {
+          const course = e.target.value;
+          await updateDoc(doc(db, 'assignments', a.id), { course });
+          onDelete?.(); // reload groups
+        }}>
+          {COURSES.map(c => <option key={c}>{c}</option>)}
+        </select>
+
+        {/* Stream dropdown */}
+        <select style={selStyle} value={a.stream || ''} onChange={async e => {
+          const stream = e.target.value;
+          await updateDoc(doc(db, 'assignments', a.id), { stream });
+          onDelete?.();
+        }}>
+          <option value="">—</option>
+          {(STREAMS_FOR[a.course] || []).map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+
+        {/* Rubric picker */}
+        <select style={{ ...selStyle, minWidth: 140 }} value={a.rubricId || ''} onChange={async e => {
+          const rubricId = e.target.value;
+          await updateDoc(doc(db, 'assignments', a.id), { rubricId: rubricId || null });
+          onUpdate?.(a.id, { rubricId });
+        }}>
+          <option value="">— No rubric —</option>
+          {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+        </select>
+
+        <button className="btn btn--secondary btn--sm" onClick={() => setCopyOpen(o => !o)}>
+          {copyOpen ? '✕' : 'Copy to…'}
+        </button>
+        <button className="btn btn--secondary btn--sm" onClick={async () => {
+          if (!window.confirm(`Archive "${a.name}"?`)) return;
+          await updateDoc(doc(db, 'assignments', a.id), { archived: true });
+          onDelete?.();
+        }}>
+          Archive
+        </button>
+      </div>
+
+      {/* Copy-to panel */}
+      {copyOpen && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px 10px 14px', background: 'var(--bg-input)', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Copy to:</span>
+          <select style={selStyle} value={tgtCourse} onChange={e => { setTgtCourse(e.target.value); setTgtStream('-1'); }}>
+            {COURSES.map(c => <option key={c}>{c}</option>)}
+          </select>
+          <select style={selStyle} value={tgtStream} onChange={e => setTgtStream(e.target.value)}>
+            {(STREAMS_FOR[tgtCourse] || []).map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button className="btn btn--primary btn--sm" onClick={handleCopy} disabled={copying}>
+            {copying ? 'Duplicating…' : 'Duplicate'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SavedAssignments({ assignments, rubrics, onDelete, onUpdate }) {
   const [openGroups, setOpenGroups] = useState({});
   const toggle = key => setOpenGroups(p => ({ ...p, [key]: !p[key] }));
@@ -354,40 +450,13 @@ function SavedAssignments({ assignments, rubrics, onDelete, onUpdate }) {
         const isOpen = !!openGroups[key];
         return (
           <div key={key} style={{ marginBottom: 8, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
-            <div
-              onClick={() => toggle(key)}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--bg-card)', cursor: 'pointer', userSelect: 'none' }}
-            >
+            <div onClick={() => toggle(key)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--bg-card)', cursor: 'pointer', userSelect: 'none' }}>
               <span style={{ fontSize: 11, color: 'var(--text-dim)', width: 10 }}>{isOpen ? '▼' : '▶'}</span>
               <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{label}</span>
               <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{items.length} assignment{items.length !== 1 ? 's' : ''}</span>
             </div>
             {isOpen && items.map(a => (
-              <div key={a.id} className="setup-list-item" style={{ flexWrap: 'wrap', gap: 10, borderTop: '1px solid var(--border)', padding: '8px 14px' }}>
-                <span style={{ flex: 1, minWidth: 160, fontWeight: 600, fontSize: 13 }}>{a.name}</span>
-                <select
-                  style={{ fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)', minWidth: 160 }}
-                  value={a.rubricId || ''}
-                  onChange={async e => {
-                    const rubricId = e.target.value;
-                    await updateDoc(doc(db, 'assignments', a.id), { rubricId: rubricId || null });
-                    onUpdate?.(a.id, { rubricId });
-                  }}
-                >
-                  <option value="">— No rubric —</option>
-                  {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                </select>
-                <button
-                  className="btn btn--secondary btn--sm"
-                  onClick={async () => {
-                    if (!window.confirm(`Archive "${a.name}"?`)) return;
-                    await updateDoc(doc(db, 'assignments', a.id), { archived: true });
-                    onDelete?.();
-                  }}
-                >
-                  Archive
-                </button>
-              </div>
+              <AssignmentRow key={a.id} a={a} rubrics={rubrics} onDelete={onDelete} onUpdate={onUpdate} />
             ))}
           </div>
         );
@@ -406,8 +475,8 @@ export default function Setup() {
   const [exporting,   setExporting]   = useState(false);
   const [exportCourse, setExportCourse] = useState('');
   const [exportStream, setExportStream] = useState('');
-  const COURSES = ['', 'Social 9', 'Social 10', 'Social 20', 'Social 30'];
-  const STREAMS = ['', '10-1', '10-2', '20-1', '20-2', '30-1', '30-2'];
+  const EXPORT_COURSES = ['', 'Social 9', 'Social 10', 'Social 20', 'Social 30'];
+  const EXPORT_STREAMS = ['', '-1', '-2'];
 
   async function load() {
     const [rSnap, aSnap] = await Promise.all([
