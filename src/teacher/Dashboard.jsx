@@ -33,25 +33,17 @@ export default function Dashboard() {
 
   async function loadData() {
     try {
-      // Core data — assignments, submissions, rubrics must succeed
       const [aSnap, sSnap, rSnap] = await Promise.all([
         getDocs(collection(db, 'assignments')),
-        getDocs(collection(db, 'submissions')),   // no orderBy — sort in JS
+        getDocs(collection(db, 'submissions')),
         getDocs(collection(db, 'rubrics')),
       ]);
       setAssignments(aSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       const subs = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      subs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+      subs.sort((a, b) => (b.timestamp?.seconds || b.lastSaved?.seconds || 0) - (a.timestamp?.seconds || a.lastSaved?.seconds || 0));
       setSubmissions(subs);
       setRubrics(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-
-      // Accesses — new collection, load separately so rules issues don't break the grid
-      try {
-        const accSnap = await getDocs(collection(db, 'accesses'));
-        setAccesses(accSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      } catch (e) {
-        console.warn('Could not load accesses (rules may need deploying):', e.message);
-      }
+      setAccesses([]); // accesses now derived from submissions
     } catch (err) {
       console.error('Dashboard load error:', err);
     } finally {
@@ -113,28 +105,20 @@ export default function Dashboard() {
 
   // ── Detail view (one assignment) ─────────────────────────────────────────────
   if (view === 'detail' && selectedAssignment) {
-    const assignmentAccesses = accesses.filter(a => a.assignmentId === selectedAssignment.id);
+    // All docs for this assignment (drafts + submitted). Deterministic IDs: {aId}__{email}
     const assignmentSubs = submissions
       .filter(s => s.assignmentId === selectedAssignment.id)
-      .sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+      .sort((a, b) => (a.lastSaved?.seconds || a.timestamp?.seconds || 0) - (b.lastSaved?.seconds || b.timestamp?.seconds || 0));
 
-    const studentMap = {};
-    assignmentAccesses.forEach(a => {
-      studentMap[a.studentEmail] = { studentName: a.studentName, studentEmail: a.studentEmail, wordCount: null, status: 'opened', submission: null, timestamp: null };
-    });
-    assignmentSubs.forEach(s => {
-      studentMap[s.studentEmail] = {
-        ...studentMap[s.studentEmail],
-        studentName: s.studentName, studentEmail: s.studentEmail,
-        wordCount: s.wordCount ?? null,
-        status: s.emailSent ? 'marked' : 'submitted',
-        submission: s,
-        timestamp: s.timestamp,
-        isResubmission: s.isResubmission || false,
-      };
-    });
-    let students = Object.values(studentMap);
-    if (unmarkedOnly) students = students.filter(s => s.status === 'submitted');
+    // A doc is "submitted" if submitted===true OR if the field is absent (old model compat)
+    const isSubmitted = s => s.submitted === true || (!('submitted' in s) && (s.response || s.plainResponse));
+
+    const students = unmarkedOnly
+      ? assignmentSubs.filter(s => isSubmitted(s) && !s.emailSent)
+      : assignmentSubs;
+
+    const accessedCount  = assignmentSubs.length;
+    const submittedCount = assignmentSubs.filter(isSubmitted).length;
 
     return (
       <div className="page-wide">
@@ -158,11 +142,11 @@ export default function Dashboard() {
           </button>
           <div style={{ display: 'flex', gap: 20 }}>
             <div className="detail-stat">
-              <span className="detail-stat__num">{assignmentAccesses.length}</span>
-              <span className="detail-stat__label">accessed</span>
+              <span className="detail-stat__num">{accessedCount}</span>
+              <span className="detail-stat__label">opened</span>
             </div>
             <div className="detail-stat">
-              <span className="detail-stat__num">{assignmentSubs.length}</span>
+              <span className="detail-stat__num">{submittedCount}</span>
               <span className="detail-stat__label">submitted</span>
             </div>
           </div>
@@ -180,32 +164,37 @@ export default function Dashboard() {
                 <tr><th>Student</th><th>Words</th><th>Submitted</th><th>Status</th><th></th></tr>
               </thead>
               <tbody>
-                {students.map(s => (
-                  <tr key={s.studentEmail} className={s.submission ? 'clickable-row' : ''}
-                    onClick={s.submission ? () => { setSelectedSubmission(s.submission); setView('marking'); } : undefined}>
-                    <td>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>
-                        {s.studentName}
-                        {s.isResubmission && <span className="resubmission-badge">revision</span>}
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{s.studentEmail}</div>
-                    </td>
-                    <td style={{ fontSize: 14 }}>
-                      {s.wordCount != null ? <strong>{s.wordCount}</strong> : <span style={{ color: 'var(--text-dim)' }}>—</span>}
-                    </td>
-                    <td style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-                      {s.timestamp ? relativeTime(s.timestamp) : '—'}
-                    </td>
-                    <td>
-                      {s.status === 'marked'    && <span className="badge badge--sent">Marked</span>}
-                      {s.status === 'submitted' && <span className="badge badge--pending">Needs marking</span>}
-                      {s.status === 'opened'    && <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Opened</span>}
-                    </td>
-                    <td style={{ width: 24 }}>
-                      {s.submission && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>}
-                    </td>
-                  </tr>
-                ))}
+                {students.map(s => {
+                  const sub     = s; // each row IS a submission doc
+                  const subTime = sub.submittedAt || sub.lastSaved;
+                  const subbed  = sub.submitted === true || (!('submitted' in sub) && (sub.response || sub.plainResponse));
+                  return (
+                    <tr key={sub.studentEmail} className="clickable-row"
+                      onClick={() => { setSelectedSubmission(sub); setView('marking'); }}>
+                      <td>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>
+                          {sub.studentName}
+                          {sub.isResubmission && <span className="resubmission-badge" style={{ marginLeft: 6 }}>revision</span>}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{sub.studentEmail}</div>
+                      </td>
+                      <td style={{ fontSize: 14 }}>
+                        {sub.wordCount != null ? <strong>{sub.wordCount}</strong> : <span style={{ color: 'var(--text-dim)' }}>—</span>}
+                      </td>
+                      <td style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+                        {subTime ? relativeTime(subTime) : '—'}
+                      </td>
+                      <td>
+                        {sub.emailSent   && <span className="badge badge--sent">Marked</span>}
+                        {!sub.emailSent && subbed  && <span className="badge badge--pending">Submitted</span>}
+                        {!sub.emailSent && !subbed && <span style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600 }}>✏️ Draft</span>}
+                      </td>
+                      <td style={{ width: 24 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

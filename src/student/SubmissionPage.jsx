@@ -1,10 +1,9 @@
 // src/student/SubmissionPage.jsx
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import {
-  collection, addDoc, getDocs, query, where,
-  serverTimestamp, doc, getDoc, setDoc,
+  doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, addDoc,
 } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../auth/ThemeContext';
@@ -14,117 +13,145 @@ import '../styles/submission.css';
 function toEmbedUrl(url) {
   const match = url?.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
   if (match) return `https://docs.google.com/document/d/${match[1]}/preview`;
-  return url; // non-Google URL: show as-is
+  return url;
 }
 
-function draftKey(assignmentId, email) {
-  return `mcrae_draft_${assignmentId}__${email}`;
+function relativeTime(date) {
+  if (!date) return '';
+  const s = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (s < 5)   return 'just now';
+  if (s < 60)  return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  return date.toLocaleTimeString();
 }
 
 export default function SubmissionPage() {
   const { assignmentId } = useParams();
-  const { user } = useAuth();
+  const { user }         = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const navigate = useNavigate();
+  const navigate         = useNavigate();
 
-  const [assignment, setAssignment]   = useState(null);
-  const [existingSub, setExistingSub] = useState(null);
-  const [submitting, setSubmitting]   = useState(false);
-  const [submitted, setSubmitted]     = useState(false);
-  const [loading, setLoading]         = useState(true);
-  const [mobileTab, setMobileTab]     = useState('assignment');
-  const [wordCount, setWordCount]     = useState(0);
-  const [draftSaved, setDraftSaved]   = useState(false);
-
-  // Resubmission
+  const [assignment,     setAssignment]     = useState(null);
+  const [draftData,      setDraftData]      = useState(null);   // existing Firestore doc
+  const [loading,        setLoading]        = useState(true);
+  const [mobileTab,      setMobileTab]      = useState('assignment');
+  const [wordCount,      setWordCount]      = useState(0);
+  const [saveStatus,     setSaveStatus]     = useState('idle'); // 'idle'|'saving'|'saved'
+  const [lastSaved,      setLastSaved]      = useState(null);   // Date object
   const [isRevisionMode, setIsRevisionMode] = useState(false);
   const [isResubmission, setIsResubmission] = useState(false);
+  const [submitting,     setSubmitting]     = useState(false);
 
   // Ask Mr. McRae modal
-  const [askModal, setAskModal]   = useState(false);
-  const [askType, setAskType]     = useState('come');
+  const [askModal,   setAskModal]   = useState(false);
+  const [askType,    setAskType]    = useState('come');
   const [askMessage, setAskMessage] = useState('');
   const [askSending, setAskSending] = useState(false);
-  const [askSent, setAskSent]     = useState(false);
+  const [askSent,    setAskSent]    = useState(false);
 
-  const editorRef          = useRef(null);
-  const initialContentSet  = useRef(false);
-  const draftTimer         = useRef(null);
+  const editorRef         = useRef(null);
+  const initialContentSet = useRef(false);
+  const saveTimer         = useRef(null);
+  const docRef            = doc(db, 'submissions', `${assignmentId}__${user.email}`);
 
-  // ── Load assignment + existing submission ──────────────────────────────────
+  // ── Load assignment + existing draft ─────────────────────────────────────
   useEffect(() => {
     async function load() {
-      const [aDoc, sSnap] = await Promise.all([
+      const [aDoc, subSnap] = await Promise.all([
         getDoc(doc(db, 'assignments', assignmentId)),
-        getDocs(query(
-          collection(db, 'submissions'),
-          where('assignmentId', '==', assignmentId),
-          where('studentEmail', '==', user.email),
-        )),
+        getDoc(docRef),
       ]);
       if (!aDoc.exists()) { navigate('/'); return; }
-      const a = { id: aDoc.id, ...aDoc.data() };
-      setAssignment(a);
-      // Track access (upsert, no duplicates)
-      setDoc(
-        doc(db, 'accesses', `${assignmentId}__${user.email}`),
-        { assignmentId, studentName: user.displayName, studentEmail: user.email, lastOpened: serverTimestamp() },
-        { merge: true },
-      );
-      if (!sSnap.empty) setExistingSub(sSnap.docs[0].data());
+      setAssignment({ id: aDoc.id, ...aDoc.data() });
+
+      if (subSnap.exists()) {
+        setDraftData(subSnap.data());
+      } else {
+        // Create the draft doc immediately on first open
+        const initial = {
+          assignmentId,
+          studentName:    user.displayName,
+          studentEmail:   user.email,
+          response:       '',
+          plainResponse:  '',
+          wordCount:      0,
+          lastSaved:      serverTimestamp(),
+          submitted:      false,
+          submittedAt:    null,
+          isResubmission: false,
+          mark:           null,
+          feedback:       null,
+          emailSent:      false,
+          createdAt:      serverTimestamp(),
+        };
+        await setDoc(docRef, initial);
+        setDraftData(initial);
+      }
       setLoading(false);
     }
     load();
-  }, [assignmentId, user.email, navigate]);
+  }, [assignmentId, user.email]);
 
-  // ── Populate editor once data loads ───────────────────────────────────────
+  // ── Populate editor once data is loaded ──────────────────────────────────
   useEffect(() => {
     if (loading || !editorRef.current || initialContentSet.current) return;
     initialContentSet.current = true;
-
-    if (existingSub?.response) {
-      // Already submitted — show the previous response in read-only look
-      // (editor is hidden in showSuccess state; this sets up revision mode)
-      editorRef.current.innerHTML = existingSub.response;
-    } else {
-      // Check localStorage for an in-progress draft
-      const draft = localStorage.getItem(draftKey(assignmentId, user.email));
-      if (draft) editorRef.current.innerHTML = draft;
+    if (draftData?.response) {
+      editorRef.current.innerHTML = draftData.response;
     }
     updateWordCount();
-  }, [loading, existingSub]);
+    if (draftData?.lastSaved?.toDate) setLastSaved(draftData.lastSaved.toDate());
+  }, [loading, draftData]);
 
-  // ── When entering revision mode, pre-load previous response ───────────────
+  // ── When entering revision mode, reset to current draft content ───────────
   useEffect(() => {
-    if (isRevisionMode && editorRef.current && existingSub?.response) {
-      editorRef.current.innerHTML = existingSub.response;
+    if (isRevisionMode && editorRef.current && draftData?.response) {
+      editorRef.current.innerHTML = draftData.response;
       setIsResubmission(true);
       updateWordCount();
       editorRef.current.focus();
     }
   }, [isRevisionMode]);
 
-  // ── Word count + draft auto-save ──────────────────────────────────────────
+  // ── Word count ────────────────────────────────────────────────────────────
   const updateWordCount = () => {
     if (!editorRef.current) return;
     const text = editorRef.current.innerText || '';
     setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
   };
 
+  // ── Auto-save (5 second debounce) ────────────────────────────────────────
+  const scheduleSave = useCallback(() => {
+    setSaveStatus('saving');
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      if (!editorRef.current) return;
+      const html  = editorRef.current.innerHTML;
+      const plain = editorRef.current.innerText || '';
+      const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
+      try {
+        await setDoc(docRef, {
+          response:      html,
+          plainResponse: plain.trim(),
+          wordCount:     wc,
+          lastSaved:     serverTimestamp(),
+        }, { merge: true });
+        const now = new Date();
+        setLastSaved(now);
+        setSaveStatus('saved');
+      } catch (err) {
+        console.error('Auto-save failed:', err);
+        setSaveStatus('idle');
+      }
+    }, 5000);
+  }, [assignmentId, user.email]);
+
   const handleInput = () => {
     updateWordCount();
-    // Debounced draft save (1 second after last keystroke)
-    clearTimeout(draftTimer.current);
-    draftTimer.current = setTimeout(() => {
-      if (editorRef.current) {
-        localStorage.setItem(draftKey(assignmentId, user.email), editorRef.current.innerHTML);
-        setDraftSaved(true);
-        setTimeout(() => setDraftSaved(false), 2000);
-      }
-    }, 1000);
+    scheduleSave();
   };
 
-  // ── Bulletproof paste / drop prevention ──────────────────────────────────
+  // ── Paste/drop prevention ─────────────────────────────────────────────────
   useEffect(() => {
     const el = editorRef.current;
     if (!el) return;
@@ -152,28 +179,24 @@ export default function SubmissionPage() {
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    const html  = editorRef.current?.innerHTML || '';
-    const plain = editorRef.current?.innerText  || '';
+    // Force a save first, then flag as submitted
+    if (!editorRef.current) return;
+    const html  = editorRef.current.innerHTML;
+    const plain = editorRef.current.innerText || '';
     if (!plain.trim()) return;
     const wc = plain.trim().split(/\s+/).filter(Boolean).length;
     setSubmitting(true);
     try {
-      await addDoc(collection(db, 'submissions'), {
-        studentName:    user.displayName,
-        studentEmail:   user.email,
-        assignmentId,
+      await setDoc(docRef, {
         response:       html,
         plainResponse:  plain.trim(),
         wordCount:      wc,
+        lastSaved:      serverTimestamp(),
+        submitted:      true,
+        submittedAt:    serverTimestamp(),
         isResubmission,
-        timestamp:      serverTimestamp(),
-        mark:           null,
-        feedback:       null,
-        emailSent:      false,
-      });
-      // Clear draft now that it's submitted
-      localStorage.removeItem(draftKey(assignmentId, user.email));
-      setSubmitted(true);
+      }, { merge: true });
+      setDraftData(prev => ({ ...prev, submitted: true, isResubmission }));
       setIsRevisionMode(false);
     } finally {
       setSubmitting(false);
@@ -196,22 +219,24 @@ export default function SubmissionPage() {
       });
       setAskSent(true);
       setTimeout(() => {
-        setAskModal(false);
-        setAskSent(false);
-        setAskMessage('');
-        setAskType('come');
+        setAskModal(false); setAskSent(false); setAskMessage(''); setAskType('come');
       }, 1800);
-    } finally {
-      setAskSending(false);
-    }
+    } finally { setAskSending(false); }
   };
+
+  // ── Update relative time every 10s ───────────────────────────────────────
+  const [, forceUpdate] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => forceUpdate(n => n + 1), 10000);
+    return () => clearInterval(id);
+  }, []);
 
   if (loading) return <div className="loading-screen"><span className="spinner" /></div>;
 
-  const isClosed          = assignment.isOpen === false;
-  const isAlreadySubmitted = !!existingSub && !isRevisionMode;
-  const showSuccess        = (submitted && !isRevisionMode) || isAlreadySubmitted;
-  const showEditor         = !showSuccess;
+  const isClosed   = assignment.isOpen === false;
+  const isSubmitted = draftData?.submitted === true;
+  const showSuccess = isSubmitted && !isRevisionMode;
+  const showEditor  = !showSuccess;
 
   return (
     <div className="submission-page">
@@ -235,7 +260,7 @@ export default function SubmissionPage() {
       </div>
 
       <div className="split">
-        {/* Left — Google Doc embed (or info card fallback) */}
+        {/* Left — Google Doc embed or info card */}
         <div className={`split__pane ${mobileTab !== 'assignment' ? 'mobile-hidden' : ''} doc-pane`}>
           {assignment.docUrl ? (
             <>
@@ -248,11 +273,7 @@ export default function SubmissionPage() {
                   ↗ New tab
                 </a>
               </div>
-              <iframe
-                src={toEmbedUrl(assignment.docUrl)}
-                className="doc-embed-iframe"
-                title={assignment.name}
-              />
+              <iframe src={toEmbedUrl(assignment.docUrl)} className="doc-embed-iframe" title={assignment.name} />
             </>
           ) : (
             <div className="assignment-info-pane">
@@ -270,44 +291,39 @@ export default function SubmissionPage() {
         <div className={`split__pane split__pane--work ${mobileTab !== 'work' ? 'mobile-hidden' : ''}`}>
           <div className="work-pane">
 
-            {/* ── Assignment closed ── */}
+            {/* Assignment closed */}
             {isClosed && !showSuccess && (
               <div className="submission-success">
                 <div className="submission-success__icon" style={{ background: 'rgba(224,92,92,0.15)', color: 'var(--danger)', fontSize: 28 }}>🔒</div>
                 <h2>Assignment Closed</h2>
-                <p>Mr. McRae has closed this assignment. You can still view the assignment doc using the link on the left.</p>
+                <p>Mr. McRae has closed this assignment. The doc is still viewable on the left.</p>
               </div>
             )}
 
-            {/* ── Already submitted / success ── */}
+            {/* Success / submitted state */}
             {showSuccess && (
               <div className="submission-success">
                 <div className="submission-success__icon">✓</div>
                 <h2>Submitted</h2>
                 <p>Your response has been received. You'll get an email when it's been marked.</p>
-                {existingSub?.emailSent && existingSub?.feedback && (
+                {draftData?.emailSent && draftData?.feedback && (
                   <div className="feedback-box">
                     <div className="feedback-box__label">Feedback</div>
-                    <div className="feedback-box__mark">Mark: <strong>{existingSub.mark}</strong></div>
-                    <div className="feedback-box__text" dangerouslySetInnerHTML={{ __html: existingSub.feedback }} />
+                    {draftData.mark != null && <div className="feedback-box__mark">Mark: <strong>{draftData.mark}</strong></div>}
+                    <div className="feedback-box__text" dangerouslySetInnerHTML={{ __html: draftData.feedback }} />
                   </div>
                 )}
                 {!isClosed && (
-                  <button
-                    className="btn btn--secondary btn--sm"
-                    style={{ marginTop: 16 }}
-                    onClick={() => setIsRevisionMode(true)}
-                  >
+                  <button className="btn btn--secondary btn--sm" style={{ marginTop: 16 }} onClick={() => setIsRevisionMode(true)}>
                     Submit a revision
                   </button>
                 )}
               </div>
             )}
 
-            {/* ── Editor (new submission or revision) ── */}
+            {/* Editor */}
             {showEditor && !isClosed && (
               <>
-
                 {/* Toolbar */}
                 <div className="editor-toolbar">
                   <button className="editor-toolbar__btn editor-toolbar__btn--bold"      onMouseDown={e => { e.preventDefault(); execCmd('bold'); }}          title="Bold">B</button>
@@ -323,11 +339,11 @@ export default function SubmissionPage() {
                     <option value="7">X-Large</option>
                   </select>
                   <div className="editor-toolbar__divider" />
-                  <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('justifyLeft'); }}    title="Align left">⬅</button>
-                  <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('justifyCenter'); }}  title="Align center">☰</button>
-                  <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('justifyRight'); }}   title="Align right">➡</button>
+                  <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('justifyLeft'); }}   title="Left">⬅</button>
+                  <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('justifyCenter'); }} title="Center">☰</button>
+                  <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('justifyRight'); }}  title="Right">➡</button>
                   <div className="editor-toolbar__divider" />
-                  <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('insertUnorderedList'); }} title="Bullet list">• List</button>
+                  <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('insertUnorderedList'); }} title="Bullets">• List</button>
                   <div className="editor-toolbar__divider" />
                   <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('undo'); }} title="Undo">↩</button>
                   <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('redo'); }} title="Redo">↪</button>
@@ -352,14 +368,14 @@ export default function SubmissionPage() {
                 <div className="work-footer">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <span className="work-charcount">{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
-                    {draftSaved && <span style={{ fontSize: 11, color: 'var(--success)' }}>Draft saved</span>}
-                    {(isRevisionMode || existingSub) && (
+                    <span style={{ fontSize: 11, color: saveStatus === 'saved' ? 'var(--success)' : 'var(--text-dim)' }}>
+                      {saveStatus === 'saving' && 'Saving…'}
+                      {saveStatus === 'saved'  && `Last saved ${relativeTime(lastSaved)}`}
+                      {saveStatus === 'idle'   && lastSaved && `Last saved ${relativeTime(lastSaved)}`}
+                    </span>
+                    {(isRevisionMode || isResubmission) && (
                       <label className="resubmission-bar__label">
-                        <input
-                          type="checkbox"
-                          checked={isResubmission}
-                          onChange={e => setIsResubmission(e.target.checked)}
-                        />
+                        <input type="checkbox" checked={isResubmission} onChange={e => setIsResubmission(e.target.checked)} />
                         Resubmission
                       </label>
                     )}
@@ -373,11 +389,7 @@ export default function SubmissionPage() {
                     <button className="btn btn--secondary btn--sm" onClick={() => setAskModal(true)}>
                       🙋 Ask Mr. McRae
                     </button>
-                    <button
-                      className="btn btn--primary"
-                      onClick={handleSubmit}
-                      disabled={submitting || wordCount === 0}
-                    >
+                    <button className="btn btn--primary" onClick={handleSubmit} disabled={submitting || wordCount === 0}>
                       {submitting ? 'Submitting…' : isRevisionMode ? 'Submit Revision' : 'Submit'}
                     </button>
                   </div>
@@ -406,22 +418,11 @@ export default function SubmissionPage() {
                   <button className={`ask-toggle__btn ${askType === 'answer' ? 'active' : ''}`} onClick={() => setAskType('answer')}>💬 Answer here</button>
                 </div>
                 {askType === 'answer' && (
-                  <textarea
-                    className="modal-textarea"
-                    value={askMessage}
-                    onChange={e => setAskMessage(e.target.value)}
-                    placeholder="Type your question for Mr. McRae…"
-                    rows={4}
-                    autoFocus
-                  />
+                  <textarea className="modal-textarea" value={askMessage} onChange={e => setAskMessage(e.target.value)} placeholder="Type your question…" rows={4} autoFocus />
                 )}
                 <div className="modal-footer">
                   <button className="btn btn--secondary btn--sm" onClick={() => setAskModal(false)}>Cancel</button>
-                  <button
-                    className="btn btn--primary btn--sm"
-                    onClick={handleAskSubmit}
-                    disabled={askSending || (askType === 'answer' && !askMessage.trim())}
-                  >
+                  <button className="btn btn--primary btn--sm" onClick={handleAskSubmit} disabled={askSending || (askType === 'answer' && !askMessage.trim())}>
                     {askSending ? 'Sending…' : 'Send'}
                   </button>
                 </div>
