@@ -307,19 +307,6 @@ export default function SubmissionPage() {
             {/* ── Editor (new submission or revision) ── */}
             {showEditor && !isClosed && (
               <>
-                {/* Resubmission flag */}
-                {(isRevisionMode || existingSub) && (
-                  <div className="resubmission-bar">
-                    <label className="resubmission-bar__label">
-                      <input
-                        type="checkbox"
-                        checked={isResubmission}
-                        onChange={e => setIsResubmission(e.target.checked)}
-                      />
-                      This is a revision / resubmission
-                    </label>
-                  </div>
-                )}
 
                 {/* Toolbar */}
                 <div className="editor-toolbar">
@@ -363,9 +350,19 @@ export default function SubmissionPage() {
 
                 {/* Footer */}
                 <div className="work-footer">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <span className="work-charcount">{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
                     {draftSaved && <span style={{ fontSize: 11, color: 'var(--success)' }}>Draft saved</span>}
+                    {(isRevisionMode || existingSub) && (
+                      <label className="resubmission-bar__label">
+                        <input
+                          type="checkbox"
+                          checked={isResubmission}
+                          onChange={e => setIsResubmission(e.target.checked)}
+                        />
+                        Resubmission
+                      </label>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     {isRevisionMode && (
