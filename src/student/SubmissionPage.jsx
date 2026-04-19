@@ -52,7 +52,42 @@ export default function SubmissionPage() {
   const editorRef         = useRef(null);
   const initialContentSet = useRef(false);
   const saveTimer         = useRef(null);
+  const splitRef          = useRef(null);
+  const isDraggingRef     = useRef(false);
+  const [splitPct,     setSplitPct]     = useState(40);   // left pane %
+  const [isDragging,   setIsDragging]   = useState(false); // overlay blocker
   const docRef            = doc(db, 'submissions', `${assignmentId}__${user.email}`);
+
+  // ── Drag-to-resize split ───────────────────────────────────────
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!isDraggingRef.current || !splitRef.current) return;
+      const rect   = splitRef.current.getBoundingClientRect();
+      const newPct = Math.min(75, Math.max(20, ((e.clientX - rect.left) / rect.width) * 100));
+      setSplitPct(newPct);
+    };
+    const onUp = () => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      setIsDragging(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+    };
+  }, []);
+
+  const handleDividerMouseDown = (e) => {
+    e.preventDefault();
+    isDraggingRef.current  = true;
+    setIsDragging(true);
+    document.body.style.cursor     = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
 
   // ── Load assignment + existing draft ─────────────────────────────────────
   useEffect(() => {
@@ -264,7 +299,12 @@ export default function SubmissionPage() {
         <button className={`mobile-tab ${mobileTab === 'work' ? 'active' : ''}`} onClick={() => setMobileTab('work')}>Your Work</button>
       </div>
 
-      <div className="split">
+      {/* Drag blocker: transparent overlay prevents iframe stealing events */}
+      {isDragging && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, cursor: 'col-resize' }} />
+      )}
+
+      <div ref={splitRef} className="split" style={{ gridTemplateColumns: `${splitPct}% 6px 1fr` }}>
         {/* Left — Google Doc embed or info card */}
         <div className={`split__pane ${mobileTab !== 'assignment' ? 'mobile-hidden' : ''} doc-pane`}>
           {assignment.docUrl ? (
@@ -291,6 +331,13 @@ export default function SubmissionPage() {
             </div>
           )}
         </div>
+
+        {/* Drag handle */}
+        <div
+          className="split__divider"
+          onMouseDown={handleDividerMouseDown}
+          title="Drag to resize"
+        />
 
         {/* Right — Work pane */}
         <div className={`split__pane split__pane--work ${mobileTab !== 'work' ? 'mobile-hidden' : ''}`}>

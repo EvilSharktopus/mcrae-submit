@@ -38,16 +38,37 @@
 .theme-toggle:hover { border-color: var(--accent); }
 
 .submission-page .split {
+  display: grid;
+  grid-template-columns: 40% 6px 1fr;
   flex: 1;
+  min-height: 0;
   overflow: hidden;
-  height: auto; /* let flex: 1 control height, not the global calc */
 }
 
 /* Make right pane a flex column so work-pane stretches full height */
-.split__pane--work {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.split__pane { min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
+
+/* ── Drag handle ── */
+.split__divider {
+  width: 6px;
+  cursor: col-resize;
+  background: var(--border);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.split__divider:hover { background: var(--accent); opacity: 0.5; }
+.split__divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 40px;
+  background: var(--text-dim);
+  border-radius: 2px;
+  opacity: 0.35;
 }
 
 /* ── Left pane: Assignment info (fallback, no doc url) ── */
@@ -235,12 +256,13 @@
 
 @media (max-width: 700px) {
   .mobile-tabs { display: flex; }
+  .split__divider { display: none; } /* hidden on mobile — single pane mode */
 
   /* On mobile: stack the split as a full-height single column */
   .submission-page .split {
     display: flex;
     flex-direction: column;
-    height: 0; /* let flex:1 control it */
+    height: 0;
   }
 
   /* Each pane fills the full width + remaining height */
