@@ -218,6 +218,66 @@ function AssignmentForm({ rubrics, onSaved }) {
   );
 }
 
+// ── Grouped assignment checklist (used inside rubric apply panel) ────────────
+function GroupedAssignmentList({ groupMap, groupKeys, rubricId, onAssignmentUpdate }) {
+  const [openGroups, setOpenGroups] = useState({});
+  const toggle = key => setOpenGroups(p => ({ ...p, [key]: !p[key] }));
+
+  if (!groupKeys.length) return (
+    <div style={{ borderTop: '1px solid var(--border)', padding: '12px 14px' }}>
+      <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>No assignments registered yet.</span>
+    </div>
+  );
+
+  return (
+    <div style={{ borderTop: '1px solid var(--border)' }}>
+      {groupKeys.map(key => {
+        const items    = groupMap[key];
+        const isOpen   = !!openGroups[key];
+        const checkedN = items.filter(a => a.rubricId === rubricId).length;
+        // Shorten label: "Social 9" → "9", "Social 10 -1" → "10-1"
+        const label = key.replace('Social ', '').replace(' -', '-');
+        return (
+          <div key={key} style={{ borderBottom: '1px solid var(--border)' }}>
+            {/* Group header */}
+            <div
+              onClick={() => toggle(key)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', cursor: 'pointer', userSelect: 'none' }}
+            >
+              <span style={{ fontSize: 11, color: 'var(--text-dim)', width: 10 }}>{isOpen ? '▼' : '▶'}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{label}</span>
+              {checkedN > 0 && (
+                <span style={{ fontSize: 11, background: 'var(--accent)', color: '#fff', borderRadius: 10, padding: '1px 7px' }}>
+                  {checkedN} applied
+                </span>
+              )}
+            </div>
+            {/* Assignment rows */}
+            {isOpen && (
+              <div style={{ paddingLeft: 28, paddingBottom: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {items.map(a => (
+                  <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      checked={a.rubricId === rubricId}
+                      onChange={async e => {
+                        const newRubricId = e.target.checked ? rubricId : null;
+                        await updateDoc(doc(db, 'assignments', a.id), { rubricId: newRubricId });
+                        onAssignmentUpdate?.(a.id, { rubricId: newRubricId });
+                      }}
+                    />
+                    <span>{a.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Saved Lists ─────────────────────────────────────────────────────────────
 function SavedRubrics({ rubrics, assignments, onAssignmentUpdate }) {
   const [expandedId, setExpandedId] = useState(null);
@@ -244,32 +304,25 @@ function SavedRubrics({ rubrics, assignments, onAssignmentUpdate }) {
                 {isExpanded ? '▲ Close' : '▼ Apply to assignments'}
               </span>
             </div>
-            {/* Expandable assignment checklist */}
-            {isExpanded && (
-              <div style={{ borderTop: '1px solid var(--border)', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {activeAssignments.length === 0 && (
-                  <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>No assignments registered yet.</span>
-                )}
-                {activeAssignments.map(a => {
-                  const checked = a.rubricId === r.id;
-                  return (
-                    <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={async e => {
-                          const newRubricId = e.target.checked ? r.id : null;
-                          await updateDoc(doc(db, 'assignments', a.id), { rubricId: newRubricId });
-                          onAssignmentUpdate?.(a.id, { rubricId: newRubricId });
-                        }}
-                      />
-                      <span style={{ flex: 1 }}>{a.name}</span>
-                      <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>{a.course} {a.stream}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
+            {/* Expandable assignment checklist — grouped by course+stream */}
+            {isExpanded && (() => {
+              // Build ordered group keys: "Social 9", "Social 10-1", etc.
+              const groupMap = {};
+              activeAssignments.forEach(a => {
+                const key = `${a.course}${a.stream ? ' ' + a.stream : ''}`;
+                if (!groupMap[key]) groupMap[key] = [];
+                groupMap[key].push(a);
+              });
+              const groupKeys = Object.keys(groupMap);
+              return (
+                <GroupedAssignmentList
+                  groupMap={groupMap}
+                  groupKeys={groupKeys}
+                  rubricId={r.id}
+                  onAssignmentUpdate={onAssignmentUpdate}
+                />
+              );
+            })()}
           </div>
         );
       })}
