@@ -219,5 +219,46 @@
 .feedback-box__text { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
 
 /* ── Mobile ── */
+.mobile-tabs {
+  display: none;
+  flex-shrink: 0;
+  background: var(--bg-nav);
+  border-bottom: 1px solid var(--border);
+}
+.mobile-tab {
+  flex: 1; padding: 10px 0; background: none; border: none;
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  color: var(--text-dim); cursor: pointer; transition: color 0.15s;
+  border-bottom: 2px solid transparent;
+}
+.mobile-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+@media (max-width: 700px) {
+  .mobile-tabs { display: flex; }
+
+  /* On mobile: stack the split as a full-height single column */
+  .submission-page .split {
+    display: flex;
+    flex-direction: column;
+    height: 0; /* let flex:1 control it */
+  }
+
+  /* Each pane fills the full width + remaining height */
+  .split__pane {
+    width: 100% !important;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Work pane needs to stay a column internally too */
+  .split__pane--work {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Doc iframe fills the full pane on mobile */
+  .doc-embed-iframe { min-height: 0; }
+}
+
 .mobile-hidden { display: none !important; }
 @media (min-width: 701px) { .mobile-hidden { display: flex !important; } }
