@@ -234,7 +234,7 @@ function SavedRubrics({ rubrics }) {
   );
 }
 
-function SavedAssignments({ assignments, rubrics, onDelete }) {
+function SavedAssignments({ assignments, rubrics, onDelete, onUpdate }) {
   if (!assignments.length) return null;
   return (
     <div className="setup-section">
@@ -242,12 +242,24 @@ function SavedAssignments({ assignments, rubrics, onDelete }) {
       {assignments.map(a => {
         const rubric = rubrics.find(r => r.id === a.rubricId);
         return (
-          <div key={a.id} className="card setup-list-item">
-            <div style={{ flex: 1 }}>
+          <div key={a.id} className="card setup-list-item" style={{ flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ flex: 1, minWidth: 180 }}>
               <strong>{a.name}</strong>
               <span style={{ fontSize: 12, color: 'var(--text-dim)', marginLeft: 10 }}>{a.course} {a.stream}</span>
-              {rubric && <span style={{ fontSize: 12, color: 'var(--text-dim)', display: 'block', marginTop: 2 }}>Rubric: {rubric.name}</span>}
             </div>
+            {/* Inline rubric picker */}
+            <select
+              style={{ fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)', minWidth: 160 }}
+              value={a.rubricId || ''}
+              onChange={async e => {
+                const rubricId = e.target.value;
+                await updateDoc(doc(db, 'assignments', a.id), { rubricId: rubricId || null });
+                onUpdate?.(a.id, { rubricId });
+              }}
+            >
+              <option value="">— No rubric —</option>
+              {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
             <button
               className="btn btn--secondary btn--sm"
               onClick={async () => {
@@ -264,6 +276,7 @@ function SavedAssignments({ assignments, rubrics, onDelete }) {
     </div>
   );
 }
+
 
 // ── Main Setup Page ─────────────────────────────────────────────────────────
 export default function Setup() {
@@ -361,7 +374,12 @@ export default function Setup() {
         </div>
         <div>
           <AssignmentForm rubrics={rubrics} onSaved={load} />
-          <SavedAssignments assignments={assignments.filter(a => !a.archived)} rubrics={rubrics} onDelete={load} />
+          <SavedAssignments
+            assignments={assignments.filter(a => !a.archived)}
+            rubrics={rubrics}
+            onDelete={load}
+            onUpdate={(id, changes) => setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a))}
+          />
         </div>
       </div>
 
