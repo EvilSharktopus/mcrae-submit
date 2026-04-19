@@ -6,13 +6,76 @@ import { exportCSV, stripHtml, currentSchoolYear } from '../utils/exportUtils';
 import SectionsPanel from './SectionsPanel';
 import '../styles/setup.css';
 
+// ── Rubric Presets ─────────────────────────────────────────────────────────
+const RUBRIC_PRESETS = {
+  'Position Paragraph Rubric (/24)': {
+    name: 'Position Paragraph Rubric',
+    categories: [
+      { name: 'Argumentation', descriptors: [
+        { label:'E',   points:8,   text:'Convincingly established position with judiciously chosen, consistent and compelling argumentation. The relationship (see above) is perceptively developed and demonstrates insightful understanding of the assignment.' },
+        { label:'E',   points:7.5, text:'Convincingly established position with judiciously chosen, consistent and compelling argumentation. The relationship (see above) is perceptively developed and demonstrates insightful understanding of the assignment.' },
+        { label:'Pf',  points:7,   text:'Purposely chosen position with logical and capably developed argumentation. The relationship (see above) is clearly developed and demonstrates sound understanding of the assignment.' },
+        { label:'Pf',  points:6.5, text:'Purposely chosen position with logical and capably developed argumentation. The relationship (see above) is clearly developed and demonstrates sound understanding of the assignment.' },
+        { label:'S',   points:6,   text:'Appropriately chosen and developed position with straightforward and conventional argumentation. The relationship (see above) is generally developed and demonstrates adequate understanding of the assignment.' },
+        { label:'S',   points:5,   text:'Appropriately chosen and developed position with straightforward and conventional argumentation. The relationship (see above) is generally developed and demonstrates adequate understanding of the assignment.' },
+        { label:'S',   points:4,   text:'Appropriately chosen and developed position with straightforward and conventional argumentation. The relationship (see above) is generally developed and demonstrates adequate understanding of the assignment.' },
+        { label:'L',   points:3.5, text:'Confusing and largely unrelated position with repetitive, contradictory, and/or simplistic argumentation. The relationship (see above) is superficially developed and demonstrates an uninformed belief.' },
+        { label:'L',   points:3,   text:'Confusing and largely unrelated position with repetitive, contradictory, and/or simplistic argumentation. The relationship (see above) is superficially developed and demonstrates an uninformed belief.' },
+        { label:'L',   points:2.5, text:'Confusing and largely unrelated position with repetitive, contradictory, and/or simplistic argumentation. The relationship (see above) is superficially developed and demonstrates an uninformed belief.' },
+        { label:'P',   points:2,   text:'Irrelevant and illogical position with little or no relationship to the source or argumentation. The relationship (see above) is minimally developed.' },
+        { label:'P',   points:1.5, text:'Irrelevant and illogical position with little or no relationship to the source or argumentation. The relationship (see above) is minimally developed.' },
+        { label:'P',   points:1,   text:'Irrelevant and illogical position with little or no relationship to the source or argumentation. The relationship (see above) is minimally developed.' },
+        { label:'INS', points:0,   text:'Does not attempt to address the assignment or is too brief to assess in any scoring category.' },
+      ]},
+      { name: 'Evidence', descriptors: [
+        { label:'E',   points:8,   text:'Evidence is sophisticated and deliberately chosen. The relative absence of error is impressive. A thorough and comprehensive discussion of evidence reveals an insightful understanding of social and application to the assignment.' },
+        { label:'E',   points:7.5, text:'Evidence is sophisticated and deliberately chosen. The relative absence of error is impressive. A thorough and comprehensive discussion of evidence reveals an insightful understanding of social and application to the assignment.' },
+        { label:'Pf',  points:7,   text:'Evidence is purposeful and specific. Evidence may contain some minor errors. A capable discussion of evidence reveals a solid understanding of social and application to the assignment.' },
+        { label:'Pf',  points:6.5, text:'Evidence is purposeful and specific. Evidence may contain some minor errors. A capable discussion of evidence reveals a solid understanding of social and application to the assignment.' },
+        { label:'S',   points:6,   text:'Evidence is conventional and straightforward. The evidence may contain minor errors and/or a mixture of relevant and unnecessary information. Discussion reveals a general acceptable understanding of social and application to the assignment.' },
+        { label:'S',   points:5,   text:'Evidence is conventional and straightforward. The evidence may contain minor errors and/or a mixture of relevant and unnecessary information. Discussion reveals a general acceptable understanding of social and application to the assignment.' },
+        { label:'S',   points:4,   text:'Evidence is conventional and straightforward. The evidence may contain minor errors and/or a mixture of relevant and unnecessary information. Discussion reveals a general acceptable understanding of social and application to the assignment.' },
+        { label:'L',   points:3.5, text:'Evidence is somewhat relevant but is unfocused and/or incompletely developed. The evidence contains off topic detail. The discussion reveals an oversimplified and/or confused understanding of social and the application to the assignment.' },
+        { label:'L',   points:3,   text:'Evidence is somewhat relevant but is unfocused and/or incompletely developed. The evidence contains off topic detail. The discussion reveals an oversimplified and/or confused understanding of social and the application to the assignment.' },
+        { label:'L',   points:2.5, text:'Evidence is somewhat relevant but is unfocused and/or incompletely developed. The evidence contains off topic detail. The discussion reveals an oversimplified and/or confused understanding of social and the application to the assignment.' },
+        { label:'P',   points:2,   text:'Evidence is either irrelevant and/or inaccurate. The evidence contains major errors. A minimal discussion reveals a lack of understanding of social and the application to the assignment.' },
+        { label:'P',   points:1.5, text:'Evidence is either irrelevant and/or inaccurate. The evidence contains major errors. A minimal discussion reveals a lack of understanding of social and the application to the assignment.' },
+        { label:'P',   points:1,   text:'Evidence is either irrelevant and/or inaccurate. The evidence contains major errors. A minimal discussion reveals a lack of understanding of social and the application to the assignment.' },
+        { label:'INS', points:0,   text:'Does not attempt to address the assignment or is too brief to assess in any scoring category.' },
+      ]},
+      { name: 'Communication', descriptors: [
+        { label:'E',   points:8,   text:'The writing is fluent, skillfully structured, and judiciously organized. Control of syntax, mechanics, and grammar is sophisticated. Vocabulary is precise and deliberately chosen. The relative absence of error is impressive.' },
+        { label:'E',   points:7.5, text:'The writing is fluent, skillfully structured, and judiciously organized. Control of syntax, mechanics, and grammar is sophisticated. Vocabulary is precise and deliberately chosen. The relative absence of error is impressive.' },
+        { label:'Pf',  points:7,   text:'The writing is clear and purposefully organized. Control of syntax, mechanics, and grammar is capable. Vocabulary is appropriate and specific. Minor errors in language do not impede communication.' },
+        { label:'Pf',  points:6.5, text:'The writing is clear and purposefully organized. Control of syntax, mechanics, and grammar is capable. Vocabulary is appropriate and specific. Minor errors in language do not impede communication.' },
+        { label:'S',   points:6,   text:'The writing is straightforward and functionally organized. Control of syntax, mechanics, and grammar is adequate. Vocabulary is conventional and generalized. There may be occasional lapses in control and minor errors; however, the communication remains generally clear.' },
+        { label:'S',   points:5,   text:'The writing is straightforward and functionally organized. Control of syntax, mechanics, and grammar is adequate. Vocabulary is conventional and generalized. There may be occasional lapses in control and minor errors; however, the communication remains generally clear.' },
+        { label:'S',   points:4,   text:'The writing is straightforward and functionally organized. Control of syntax, mechanics, and grammar is adequate. Vocabulary is conventional and generalized. There may be occasional lapses in control and minor errors; however, the communication remains generally clear.' },
+        { label:'L',   points:3.5, text:'The writing is awkward and lacks organization. Control of syntax, mechanics and grammar is inconsistent. Vocabulary is imprecise, simplistic, and inappropriate. Errors obscure the clarity of communication.' },
+        { label:'L',   points:3,   text:'The writing is awkward and lacks organization. Control of syntax, mechanics and grammar is inconsistent. Vocabulary is imprecise, simplistic, and inappropriate. Errors obscure the clarity of communication.' },
+        { label:'L',   points:2.5, text:'The writing is awkward and lacks organization. Control of syntax, mechanics and grammar is inconsistent. Vocabulary is imprecise, simplistic, and inappropriate. Errors obscure the clarity of communication.' },
+        { label:'P',   points:2,   text:'The writing is unclear and disorganized. Control of syntax, mechanics, and grammar is lacking. Vocabulary is overgeneralized and inaccurate. Jarring errors impede communication.' },
+        { label:'P',   points:1.5, text:'The writing is unclear and disorganized. Control of syntax, mechanics, and grammar is lacking. Vocabulary is overgeneralized and inaccurate. Jarring errors impede communication.' },
+        { label:'P',   points:1,   text:'The writing is unclear and disorganized. Control of syntax, mechanics, and grammar is lacking. Vocabulary is overgeneralized and inaccurate. Jarring errors impede communication.' },
+        { label:'INS', points:0,   text:'Does not attempt to address the assignment or is too brief to assess in any scoring category.' },
+      ]},
+    ],
+  },
+};
+
 // ── Rubric Builder ─────────────────────────────────────────────────────────
 function RubricBuilder({ onSaved }) {
   const [name, setName] = useState('');
   const [categories, setCategories] = useState([{ name: '', descriptors: [{ text: '', points: 1 }] }]);
   const [saving, setSaving] = useState(false);
 
+  const loadPreset = (presetKey) => {
+    const p = RUBRIC_PRESETS[presetKey];
+    if (p) { setName(p.name); setCategories(p.categories); }
+  };
+
   const addCategory = () => setCategories(c => [...c, { name: '', descriptors: [{ text: '', points: 1 }] }]);
+
   const removeCategory = (ci) => setCategories(c => c.filter((_, i) => i !== ci));
   const updateCatName = (ci, val) => setCategories(c => c.map((cat, i) => i === ci ? { ...cat, name: val } : cat));
 
@@ -42,6 +105,12 @@ function RubricBuilder({ onSaved }) {
   return (
     <div className="setup-section card">
       <h2 className="setup-section__title">Add Rubric</h2>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Load preset:</span>
+        {Object.keys(RUBRIC_PRESETS).map(key => (
+          <button key={key} className="btn btn--secondary btn--sm" onClick={() => loadPreset(key)}>{key}</button>
+        ))}
+      </div>
       <div className="field">
         <label>Rubric Name</label>
         <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Position Paper Rubric" />

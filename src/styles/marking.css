@@ -27,14 +27,54 @@
   font-size: 14px; line-height: 1.7; color: var(--text); white-space: pre-wrap;
 }
 
-/* Rubric */
-.rubric-categories { display: flex; flex-direction: column; gap: 14px; }
+/* ── Rubric tier UI ── */
+.rubric-categories { display: flex; flex-direction: column; gap: 16px; }
+
+/* INS override button */
+.rubric-ins-btn {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 14px; width: 100%;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius); cursor: pointer;
+  font-family: inherit; text-align: left; transition: border-color 0.15s;
+}
+.rubric-ins-btn:hover { border-color: var(--danger); }
+.rubric-ins-btn--active { border-color: var(--danger); background: rgba(224,92,92,0.1); }
+.rubric-ins-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--danger); flex-shrink: 0; }
+.rubric-ins-text  { font-size: 12px; color: var(--text-dim); }
+
 .rubric-category {}
 .rubric-category__name {
-  font-size: 13px; font-weight: 600; margin-bottom: 6px;
+  font-size: 13px; font-weight: 600; margin-bottom: 8px;
   display: flex; align-items: center; gap: 8px;
 }
-.rubric-category__points { color: var(--success); font-size: 12px; }
+.rubric-category__points     { color: var(--success); font-size: 12px; }
+.rubric-category__tier-badge {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  background: rgba(76,175,130,0.15); color: var(--success);
+  padding: 1px 8px; border-radius: 20px;
+}
+
+/* Tier rows */
+.rubric-tiers { display: flex; flex-direction: column; gap: 5px; }
+.rubric-tier  { display: flex; align-items: center; gap: 8px; }
+.rubric-tier__label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--text-dim); width: 28px; flex-shrink: 0; text-align: right;
+}
+.rubric-tier__btns { display: flex; gap: 4px; flex-wrap: wrap; }
+
+/* Point value buttons */
+.rubric-pt-btn {
+  background: var(--bg-input); border: 1px solid var(--border);
+  color: var(--text); font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; padding: 4px 10px; min-width: 40px; border-radius: var(--radius);
+  text-align: center; transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.rubric-pt-btn:hover { border-color: var(--accent); color: var(--accent); }
+.rubric-pt-btn.selected { background: var(--success); border-color: var(--success); color: #fff; }
+
+/* Legacy descriptor fallback (rubrics without label field) */
 .rubric-descriptors { display: flex; flex-direction: column; gap: 5px; }
 .rubric-descriptor {
   display: flex; align-items: flex-start; gap: 10px;
@@ -45,9 +85,7 @@
 }
 .rubric-descriptor:hover { border-color: var(--accent); }
 .rubric-descriptor.selected { border-color: var(--success); background: rgba(76,175,130,0.12); }
-.rubric-descriptor__points {
-  font-weight: 700; color: var(--accent); min-width: 28px; flex-shrink: 0;
-}
+.rubric-descriptor__points { font-weight: 700; color: var(--accent); min-width: 28px; flex-shrink: 0; }
 .rubric-descriptor.selected .rubric-descriptor__points { color: var(--success); }
 .rubric-descriptor__text { color: var(--text-dim); }
 
