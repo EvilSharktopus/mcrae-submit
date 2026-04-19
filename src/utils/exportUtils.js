@@ -17,7 +17,8 @@ export function exportCSV(filename, headers, rows) {
 /** Returns the current school year label, e.g. "2025_2026" */
 export function currentSchoolYear() {
   const now      = new Date();
-  const startYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  // School year runs Sep–Jun. Sep (index 8) starts the new year.
+  const startYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
   return `${startYear}_${startYear + 1}`;
 }
 
