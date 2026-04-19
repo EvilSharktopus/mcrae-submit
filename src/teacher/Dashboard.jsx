@@ -67,16 +67,39 @@ export default function Dashboard() {
   };
 
   const handleExport = (asn, subs) => {
-    const headers = ['Student Name', 'Email', 'Submitted', 'Words', 'Mark', 'Revision', 'Feedback'];
-    const rows = subs.map(s => [
-      s.studentName,
-      s.studentEmail,
-      s.timestamp?.toDate ? s.timestamp.toDate().toLocaleDateString() : '',
-      s.wordCount ?? '',
-      s.mark ?? '',
-      s.isResubmission ? 'Yes' : 'No',
-      stripHtml(s.feedback),
-    ]);
+    const rubric   = rubrics.find(r => r.id === asn.rubricId);
+    const catNames = rubric?.categories?.map(c => c.name) || [];
+
+    const headers = [
+      'Student Name', 'Email', 'Date Submitted',
+      ...catNames,
+      'Total Mark', 'Revision', 'Feedback',
+    ];
+
+    const rows = subs.map(s => {
+      const catCols = catNames.map((name, i) => {
+        const bd = s.rubricBreakdown;
+        if (!bd) return '';
+        const cat = bd.find(b => b.category === name) ?? bd[i];
+        if (!cat || cat.points == null) return '';
+        return cat.label ? `${cat.label} \u2013 ${cat.points}` : cat.points;
+      });
+      const dateStr = s.submittedAt?.toDate
+        ? s.submittedAt.toDate().toLocaleDateString()
+        : s.timestamp?.toDate
+        ? s.timestamp.toDate().toLocaleDateString()
+        : '';
+      return [
+        s.studentName,
+        s.studentEmail,
+        dateStr,
+        ...catCols,
+        s.mark ?? '',
+        s.isResubmission ? 'Yes' : 'No',
+        stripHtml(s.feedback),
+      ];
+    });
+
     exportCSV(`${asn.name.replace(/\s+/g, '_')}_grades.csv`, headers, rows);
   };
 

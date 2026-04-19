@@ -106,7 +106,11 @@ export default function MarkingView({ submission, assignment, rubric, onClose, n
         text:     selections[catIdx]?.text   ?? null,
       })) || [];
 
-      await updateDoc(doc(db, 'submissions', submissionDocId), { mark, feedback: feedback.trim() });
+      await updateDoc(doc(db, 'submissions', submissionDocId), {
+        mark,
+        feedback: feedback.trim(),
+        rubricBreakdown: rubricBreakdown.length > 0 ? rubricBreakdown : null,
+      });
       const sendMark = httpsCallable(functions, 'sendMark');
       await sendMark({
         submissionId:   submissionDocId,
