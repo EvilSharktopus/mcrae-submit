@@ -80,8 +80,18 @@ export default function MarkingView({ submission, assignment, rubric, onClose })
       <div className="marking-split">
         {/* Left — Student response */}
         <div className="marking-pane">
-          <div className="marking-pane__label">Student Response</div>
-          <div className="marking-response">{submission.response}</div>
+          <div className="marking-pane__label" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            Student Response
+            {submission.wordCount != null && (
+              <span style={{ fontSize: 11, fontWeight: 600, background: 'rgba(123,143,181,0.2)', color: 'var(--accent)', padding: '2px 8px', borderRadius: 20 }}>
+                {submission.wordCount} words
+              </span>
+            )}
+          </div>
+          <div
+            className="marking-response"
+            dangerouslySetInnerHTML={{ __html: submission.response }}
+          />
         </div>
 
         {/* Right — Rubric + feedback */}

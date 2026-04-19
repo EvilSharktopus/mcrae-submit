@@ -21,6 +21,18 @@
   --radius-lg: 10px;
 }
 
+/* Light theme */
+[data-theme="light"] {
+  --bg: #f0f2f7;
+  --bg-nav: #ffffff;
+  --bg-card: #ffffff;
+  --bg-input: #f8f9fc;
+  --bg-hover: #e4e8f0;
+  --text: #1a1d2e;
+  --text-dim: #6b7280;
+  --border: #d1d5e0;
+}
+
 html, body, #root {
   height: 100%;
   font-family: 'Inter', sans-serif;
@@ -105,7 +117,7 @@ html, body, #root {
 .page-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
 
 /* Split screen */
-.split { display: grid; grid-template-columns: 1fr 1fr; height: calc(100vh - 52px); }
+.split { display: grid; grid-template-columns: 40% 60%; height: calc(100vh - 52px); }
 .split__pane { overflow-y: auto; border-right: 1px solid var(--border); }
 .split__pane:last-child { border-right: none; }
 

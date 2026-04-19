@@ -82,8 +82,11 @@ export default function Dashboard() {
                   <span className="dashboard-submission-row__email">{s.studentEmail}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {s.wordCount != null && (
+                    <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{s.wordCount} words</span>
+                  )}
                   {s.emailSent
-                    ? <span className="badge badge--sent">Marked & Sent</span>
+                    ? <span className="badge badge--sent">Marked &amp; Sent</span>
                     : s.mark != null
                     ? <span className="badge badge--marked">Marked</span>
                     : <span className="badge badge--pending">Pending</span>
