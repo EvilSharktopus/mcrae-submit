@@ -370,6 +370,19 @@ export default function SubmissionPage() {
                     <div className="feedback-box__text" dangerouslySetInnerHTML={{ __html: draftData.feedback }} />
                   </div>
                 )}
+                
+                {/* Read-only view of submitted work */}
+                {(draftData?.response || draftData?.plainResponse) && (
+                  <div style={{ marginTop: 32, textAlign: 'left' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-dim)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Submission</div>
+                    <div 
+                      className="editor-body" 
+                      style={{ minHeight: 'auto', maxHeight: '50vh', overflowY: 'auto', padding: '16px 20px', background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'default' }} 
+                      dangerouslySetInnerHTML={{ __html: draftData.response || draftData.plainResponse }} 
+                    />
+                  </div>
+                )}
+
                 {!isClosed && (
                   <button className="btn btn--secondary btn--sm" style={{ marginTop: 16 }} onClick={() => setIsRevisionMode(true)}>
                     Submit a revision
