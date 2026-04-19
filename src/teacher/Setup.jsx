@@ -642,13 +642,13 @@ export default function Setup() {
             <div className="field">
               <label>Course</label>
               <select value={exportCourse} onChange={e => setExportCourse(e.target.value)}>
-                {COURSES.map(c => <option key={c} value={c}>{c || 'All courses'}</option>)}
+                {EXPORT_COURSES.map(c => <option key={c} value={c}>{c || 'All courses'}</option>)}
               </select>
             </div>
             <div className="field">
               <label>Stream</label>
               <select value={exportStream} onChange={e => setExportStream(e.target.value)}>
-                {STREAMS.map(s => <option key={s} value={s}>{s || 'All streams'}</option>)}
+                {EXPORT_STREAMS.map(s => <option key={s} value={s}>{s || 'All streams'}</option>)}
               </select>
             </div>
           </div>
@@ -675,7 +675,7 @@ export default function Setup() {
       </div>
 
       {/* ── Import Scraped Assignments ── */}
-      <ImportScrapedAssignments assignments={assignments} onDone={() => { loadAssignments(); }} />
+      <ImportScrapedAssignments assignments={assignments} onDone={() => { load(); }} />
 
       {/* ── Sections & Rosters ── */}
       <div style={{ marginTop: 32 }}>
