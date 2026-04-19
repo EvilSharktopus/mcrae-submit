@@ -163,6 +163,19 @@ export default function Dashboard() {
           >
             ↓ Export CSV
           </button>
+          <button
+            className="btn btn--secondary btn--sm"
+            style={{ color: 'var(--danger)' }}
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (!confirm(`Archive "${selectedAssignment.name}"? It will be hidden from the dashboard.`)) return;
+              await updateDoc(doc(db, 'assignments', selectedAssignment.id), { archived: true });
+              setAssignments(prev => prev.map(x => x.id === selectedAssignment.id ? { ...x, archived: true } : x));
+              setView('grid');
+            }}
+          >
+            🗃️ Archive
+          </button>
           <div style={{ display: 'flex', gap: 20 }}>
             <div className="detail-stat">
               <span className="detail-stat__num">{accessedCount}</span>
