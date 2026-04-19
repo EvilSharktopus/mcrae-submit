@@ -10,6 +10,13 @@ import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../auth/ThemeContext';
 import '../styles/submission.css';
 
+// Convert a Google Docs URL to the /preview embed URL
+function toEmbedUrl(url) {
+  const match = url?.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return `https://docs.google.com/document/d/${match[1]}/preview`;
+  return url; // non-Google URL: show as-is
+}
+
 function draftKey(assignmentId, email) {
   return `mcrae_draft_${assignmentId}__${email}`;
 }
@@ -228,19 +235,35 @@ export default function SubmissionPage() {
       </div>
 
       <div className="split">
-        {/* Left — Assignment info */}
-        <div className={`split__pane assignment-info-pane ${mobileTab !== 'assignment' ? 'mobile-hidden' : ''}`}>
-          <div className="assignment-card">
-            <div className="assignment-card__label">Assignment</div>
-            <h2 className="assignment-card__name">{assignment.name}</h2>
-            {assignment.stream && <span className="badge badge--pending">{assignment.stream}</span>}
-            {assignment.description && <p className="assignment-card__desc">{assignment.description}</p>}
-            {assignment.docUrl && (
-              <a href={assignment.docUrl} target="_blank" rel="noreferrer" className="assignment-card__link">
-                View Assignment Doc →
-              </a>
-            )}
-          </div>
+        {/* Left — Google Doc embed (or info card fallback) */}
+        <div className={`split__pane ${mobileTab !== 'assignment' ? 'mobile-hidden' : ''} doc-pane`}>
+          {assignment.docUrl ? (
+            <>
+              <div className="doc-embed-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <span className="doc-embed-header__name">{assignment.name}</span>
+                  {assignment.stream && <span className="submission-header__stream">{assignment.stream}</span>}
+                </div>
+                <a href={assignment.docUrl} target="_blank" rel="noreferrer" className="btn btn--secondary btn--sm" style={{ flexShrink: 0 }}>
+                  ↗ New tab
+                </a>
+              </div>
+              <iframe
+                src={toEmbedUrl(assignment.docUrl)}
+                className="doc-embed-iframe"
+                title={assignment.name}
+              />
+            </>
+          ) : (
+            <div className="assignment-info-pane">
+              <div className="assignment-card">
+                <div className="assignment-card__label">Assignment</div>
+                <h2 className="assignment-card__name">{assignment.name}</h2>
+                {assignment.stream && <span className="badge badge--pending">{assignment.stream}</span>}
+                {assignment.description && <p className="assignment-card__desc">{assignment.description}</p>}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right — Work pane */}
