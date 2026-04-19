@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { exportCSV, stripHtml, currentSchoolYear } from '../utils/exportUtils';
+import SectionsPanel from './SectionsPanel';
 import '../styles/setup.css';
 
 // ── Rubric Builder ─────────────────────────────────────────────────────────
@@ -337,6 +338,11 @@ export default function Setup() {
           </button>
         </div>
 
+      </div>
+
+      {/* ── Sections & Rosters ── */}
+      <div style={{ marginTop: 32 }}>
+        <SectionsPanel />
       </div>
     </div>
   );

@@ -1,0 +1,89 @@
+/* src/styles/section.css */
+
+.section-picker {
+  min-height: calc(100vh - 52px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  gap: 36px;
+}
+
+.section-picker__header { text-align: center; }
+.section-picker__title  { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+.section-picker__subtitle { font-size: 15px; color: var(--text-dim); }
+
+/* ── Section grid ── */
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 860px;
+}
+
+.section-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  text-align: left;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.section-card:hover:not(:disabled) {
+  border-color: var(--accent);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+  transform: translateY(-2px);
+}
+.section-card:disabled { opacity: 0.6; cursor: default; }
+.section-card--current { border-color: var(--accent); background: rgba(123,143,181,0.08); }
+
+.section-card__course {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--accent); margin-bottom: 4px;
+}
+.section-card__name   { font-size: 17px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.section-card__stream { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.section-card__badge  {
+  position: absolute; top: 10px; right: 10px;
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  background: var(--accent); color: #fff; border-radius: 20px; padding: 2px 8px;
+}
+.section-card__spinner {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.25); border-radius: var(--radius-lg);
+}
+
+/* ── Roster panel in Setup ── */
+.sections-list { display: flex; flex-direction: column; gap: 12px; }
+
+.section-row {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+.section-row__header {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  cursor: pointer; user-select: none;
+}
+.section-row__header:hover { background: var(--bg-hover); }
+.section-row__info { flex: 1; }
+.section-row__name { font-size: 14px; font-weight: 700; }
+.section-row__meta { font-size: 12px; color: var(--text-dim); }
+.section-row__count { font-size: 12px; color: var(--text-dim); padding: 3px 10px; background: var(--bg-input); border-radius: 20px; }
+.section-row__actions { display: flex; gap: 8px; }
+
+.section-roster {
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  background: var(--bg-input);
+}
+.roster-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.roster-table th { text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); padding: 4px 8px; }
+.roster-table td { padding: 8px 8px; border-top: 1px solid var(--border); }
