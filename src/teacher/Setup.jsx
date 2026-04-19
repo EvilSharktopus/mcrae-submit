@@ -1,7 +1,8 @@
 // src/teacher/Setup.jsx
 import { useEffect, useState } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { exportCSV, stripHtml, currentSchoolYear } from '../utils/exportUtils';
 import '../styles/setup.css';
 
 // ── Rubric Builder ─────────────────────────────────────────────────────────
@@ -195,9 +196,15 @@ function SavedAssignments({ assignments, rubrics, onDelete }) {
 
 // ── Main Setup Page ─────────────────────────────────────────────────────────
 export default function Setup() {
-  const [rubrics, setRubrics] = useState([]);
+  const [rubrics,     setRubrics]     = useState([]);
   const [assignments, setAssignments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading,     setLoading]     = useState(true);
+  const [archiving,   setArchiving]   = useState(false);
+  const [exporting,   setExporting]   = useState(false);
+  const [exportCourse, setExportCourse] = useState('');
+  const [exportStream, setExportStream] = useState('');
+  const COURSES = ['', 'Social 9', 'Social 10', 'Social 20', 'Social 30'];
+  const STREAMS = ['', '10-1', '10-2', '20-1', '20-2', '30-1', '30-2'];
 
   async function load() {
     const [rSnap, aSnap] = await Promise.all([
@@ -211,6 +218,66 @@ export default function Setup() {
 
   useEffect(() => { load(); }, []);
 
+  async function archiveSchoolYear() {
+    const year = currentSchoolYear();
+    const sSnap = await getDocs(collection(db, 'submissions'));
+    if (sSnap.empty) { alert('No submissions to archive.'); return; }
+    if (!window.confirm(`Archive ${sSnap.size} submission${sSnap.size !== 1 ? 's' : ''} to "submissions_${year}"?\n\nThis clears the active dashboard. All data is preserved in Firestore.`)) return;
+    setArchiving(true);
+    try {
+      // Batch in chunks of 250 (2 ops per doc ≤ 500 limit)
+      const all = sSnap.docs;
+      for (let i = 0; i < all.length; i += 250) {
+        const chunk = all.slice(i, i + 250);
+        const batch = writeBatch(db);
+        chunk.forEach(d => {
+          batch.set(doc(db, `submissions_${year}`, d.id), d.data());
+          batch.delete(doc(db, 'submissions', d.id));
+        });
+        await batch.commit();
+      }
+      alert(`✓ ${all.length} submissions archived to submissions_${year}.`);
+    } catch (err) {
+      console.error(err);
+      alert('Error archiving. Check console.');
+    } finally { setArchiving(false); }
+  }
+
+  async function handleGlobalExport() {
+    setExporting(true);
+    try {
+      const sSnap = await getDocs(collection(db, 'submissions'));
+      const allSubs = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Filter by matching assignment course/stream
+      const matchingIds = new Set(
+        assignments
+          .filter(a => (!exportCourse || a.course === exportCourse) && (!exportStream || a.stream === exportStream))
+          .map(a => a.id)
+      );
+      const filtered = allSubs.filter(s => matchingIds.has(s.assignmentId));
+      if (!filtered.length) { alert('No submissions match that filter.'); return; }
+      const aMap = Object.fromEntries(assignments.map(a => [a.id, a]));
+      const headers = ['Assignment', 'Course', 'Stream', 'Student Name', 'Email', 'Submitted', 'Words', 'Mark', 'Revision', 'Feedback'];
+      const rows = filtered.map(s => {
+        const a = aMap[s.assignmentId] || {};
+        return [
+          a.name || s.assignmentId,
+          a.course || '',
+          a.stream || '',
+          s.studentName,
+          s.studentEmail,
+          s.timestamp?.toDate ? s.timestamp.toDate().toLocaleDateString() : '',
+          s.wordCount ?? '',
+          s.mark ?? '',
+          s.isResubmission ? 'Yes' : 'No',
+          stripHtml(s.feedback),
+        ];
+      });
+      const label = [exportCourse, exportStream].filter(Boolean).join('_') || 'all';
+      exportCSV(`grades_${label}.csv`, headers, rows);
+    } finally { setExporting(false); }
+  }
+
   if (loading) return <div className="loading-screen"><span className="spinner" /></div>;
 
   return (
@@ -223,8 +290,53 @@ export default function Setup() {
         </div>
         <div>
           <AssignmentForm rubrics={rubrics} onSaved={load} />
-          <SavedAssignments assignments={assignments} rubrics={rubrics} onDelete={load} />
+          <SavedAssignments assignments={assignments.filter(a => !a.archived)} rubrics={rubrics} onDelete={load} />
         </div>
+      </div>
+
+      {/* ── Export & Archive ── */}
+      <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+
+        {/* Global CSV Export */}
+        <div className="setup-section card">
+          <h2 className="setup-section__title">Export Grades</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 16 }}>
+            Download a CSV of all marks filtered by course and stream.
+          </p>
+          <div className="setup-grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 14 }}>
+            <div className="field">
+              <label>Course</label>
+              <select value={exportCourse} onChange={e => setExportCourse(e.target.value)}>
+                {COURSES.map(c => <option key={c} value={c}>{c || 'All courses'}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Stream</label>
+              <select value={exportStream} onChange={e => setExportStream(e.target.value)}>
+                {STREAMS.map(s => <option key={s} value={s}>{s || 'All streams'}</option>)}
+              </select>
+            </div>
+          </div>
+          <button className="btn btn--primary" onClick={handleGlobalExport} disabled={exporting}>
+            {exporting ? 'Exporting…' : '↓ Export CSV'}
+          </button>
+        </div>
+
+        {/* Archive School Year */}
+        <div className="setup-section card">
+          <h2 className="setup-section__title">Archive School Year</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 8 }}>
+            Move all current submissions to a separate Firestore collection for the <strong>{currentSchoolYear().replace('_', '–')}</strong> school year.
+            The active dashboard will be cleared. All data is preserved.
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 16 }}>
+            ⚠️ This cannot be undone from the UI.
+          </p>
+          <button className="btn btn--danger" onClick={archiveSchoolYear} disabled={archiving}>
+            {archiving ? 'Archiving…' : `Archive ${currentSchoolYear().replace('_', '–')} Submissions`}
+          </button>
+        </div>
+
       </div>
     </div>
   );

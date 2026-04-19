@@ -4,6 +4,7 @@ import { db } from '../firebase';
 import {
   collection, getDocs, query, orderBy, where, onSnapshot, doc, updateDoc,
 } from 'firebase/firestore';
+import { exportCSV, stripHtml } from '../utils/exportUtils';
 import MarkingView from './MarkingView';
 import '../styles/dashboard.css';
 
@@ -57,6 +58,20 @@ export default function Dashboard() {
     e.stopPropagation();
     await updateDoc(doc(db, 'assignments', a.id), { isOpen: !(a.isOpen !== false) });
     setAssignments(prev => prev.map(x => x.id === a.id ? { ...x, isOpen: !(a.isOpen !== false) } : x));
+  };
+
+  const handleExport = (asn, subs) => {
+    const headers = ['Student Name', 'Email', 'Submitted', 'Words', 'Mark', 'Revision', 'Feedback'];
+    const rows = subs.map(s => [
+      s.studentName,
+      s.studentEmail,
+      s.timestamp?.toDate ? s.timestamp.toDate().toLocaleDateString() : '',
+      s.wordCount ?? '',
+      s.mark ?? '',
+      s.isResubmission ? 'Yes' : 'No',
+      stripHtml(s.feedback),
+    ]);
+    exportCSV(`${asn.name.replace(/\s+/g, '_')}_grades.csv`, headers, rows);
   };
 
   if (loading) return <div className="loading-screen"><span className="spinner" /></div>;
@@ -121,6 +136,12 @@ export default function Dashboard() {
             <input type="checkbox" checked={unmarkedOnly} onChange={e => setUnmarkedOnly(e.target.checked)} />
             Unmarked only
           </label>
+          <button
+            className="btn btn--secondary btn--sm"
+            onClick={() => handleExport(selectedAssignment, assignmentSubs)}
+          >
+            ↓ Export CSV
+          </button>
           <div style={{ display: 'flex', gap: 20 }}>
             <div className="detail-stat">
               <span className="detail-stat__num">{assignmentAccesses.length}</span>
