@@ -4,8 +4,7 @@ import { auth } from '../firebase';
 import {
   onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   signOut,
 } from 'firebase/auth';
 
@@ -18,20 +17,21 @@ export function AuthProvider({ children }) {
   const [isTeacher, setIsTeacher] = useState(false);
 
   useEffect(() => {
-    // Handle redirect result after Google sign-in
-    getRedirectResult(auth).catch((err) => {
-      console.error('Redirect sign-in error:', err);
-    });
-
     return onAuthStateChanged(auth, (u) => {
       setUser(u);
       setIsTeacher(u?.email === TEACHER_EMAIL);
     });
   }, []);
 
-  const signIn = () => {
+  const signIn = async () => {
     const provider = new GoogleAuthProvider();
-    signInWithRedirect(auth, provider);
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        console.error('Sign-in error:', err);
+      }
+    }
   };
 
   const signOutUser = () => signOut(auth);
