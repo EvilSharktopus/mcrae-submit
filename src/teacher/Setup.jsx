@@ -332,41 +332,63 @@ function SavedRubrics({ rubrics, assignments, onAssignmentUpdate }) {
 
 
 function SavedAssignments({ assignments, rubrics, onDelete, onUpdate }) {
+  const [openGroups, setOpenGroups] = useState({});
+  const toggle = key => setOpenGroups(p => ({ ...p, [key]: !p[key] }));
+
   if (!assignments.length) return null;
+
+  const groupMap = {};
+  assignments.forEach(a => {
+    const key = `${a.course}${a.stream ? ' ' + a.stream : ''}`;
+    if (!groupMap[key]) groupMap[key] = [];
+    groupMap[key].push(a);
+  });
+  const groupKeys = Object.keys(groupMap).sort();
+
   return (
     <div className="setup-section">
       <h3 className="setup-list-title">Registered Assignments ({assignments.length})</h3>
-      {assignments.map(a => {
-        const rubric = rubrics.find(r => r.id === a.rubricId);
+      {groupKeys.map(key => {
+        const label  = key.replace('Social ', '').replace(' -', '-');
+        const items  = groupMap[key];
+        const isOpen = !!openGroups[key];
         return (
-          <div key={a.id} className="card setup-list-item" style={{ flexWrap: 'wrap', gap: 10 }}>
-            <div style={{ flex: 1, minWidth: 180 }}>
-              <strong>{a.name}</strong>
-              <span style={{ fontSize: 12, color: 'var(--text-dim)', marginLeft: 10 }}>{a.course} {a.stream}</span>
+          <div key={key} style={{ marginBottom: 8, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+            <div
+              onClick={() => toggle(key)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--bg-card)', cursor: 'pointer', userSelect: 'none' }}
+            >
+              <span style={{ fontSize: 11, color: 'var(--text-dim)', width: 10 }}>{isOpen ? '▼' : '▶'}</span>
+              <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{label}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{items.length} assignment{items.length !== 1 ? 's' : ''}</span>
             </div>
-            {/* Inline rubric picker */}
-            <select
-              style={{ fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)', minWidth: 160 }}
-              value={a.rubricId || ''}
-              onChange={async e => {
-                const rubricId = e.target.value;
-                await updateDoc(doc(db, 'assignments', a.id), { rubricId: rubricId || null });
-                onUpdate?.(a.id, { rubricId });
-              }}
-            >
-              <option value="">— No rubric —</option>
-              {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-            <button
-              className="btn btn--secondary btn--sm"
-              onClick={async () => {
-                if (!window.confirm(`Archive "${a.name}"? It will be hidden from students but all submissions are kept.`)) return;
-                await updateDoc(doc(db, 'assignments', a.id), { archived: true });
-                onDelete?.();
-              }}
-            >
-              Archive
-            </button>
+            {isOpen && items.map(a => (
+              <div key={a.id} className="setup-list-item" style={{ flexWrap: 'wrap', gap: 10, borderTop: '1px solid var(--border)', padding: '8px 14px' }}>
+                <span style={{ flex: 1, minWidth: 160, fontWeight: 600, fontSize: 13 }}>{a.name}</span>
+                <select
+                  style={{ fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)', minWidth: 160 }}
+                  value={a.rubricId || ''}
+                  onChange={async e => {
+                    const rubricId = e.target.value;
+                    await updateDoc(doc(db, 'assignments', a.id), { rubricId: rubricId || null });
+                    onUpdate?.(a.id, { rubricId });
+                  }}
+                >
+                  <option value="">— No rubric —</option>
+                  {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+                <button
+                  className="btn btn--secondary btn--sm"
+                  onClick={async () => {
+                    if (!window.confirm(`Archive "${a.name}"?`)) return;
+                    await updateDoc(doc(db, 'assignments', a.id), { archived: true });
+                    onDelete?.();
+                  }}
+                >
+                  Archive
+                </button>
+              </div>
+            ))}
           </div>
         );
       })}

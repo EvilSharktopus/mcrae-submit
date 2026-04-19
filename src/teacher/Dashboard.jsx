@@ -30,6 +30,8 @@ export default function Dashboard() {
   const [selectedSubmission,  setSelectedSubmission]  = useState(null);
   const [unmarkedOnly, setUnmarkedOnly] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [openGroups, setOpenGroups] = useState({});
+  const toggleGroup = key => setOpenGroups(p => ({ ...p, [key]: !p[key] }));
 
   async function loadData() {
     try {
@@ -229,87 +231,121 @@ export default function Dashboard() {
     );
   }
 
-  // ── Grid view ────────────────────────────────────────────────────────────────
   const helpByAssignment = {};
   helpRequests.forEach(h => {
     if (!helpByAssignment[h.assignmentId]) helpByAssignment[h.assignmentId] = [];
     helpByAssignment[h.assignmentId].push(h);
   });
 
-  // Sort assignments by most recent submission (descending)
   const activeAssignments = assignments.filter(a => !a.archived);
-  const sortedAssignments = [...activeAssignments].sort((a, b) => {
-    const latestA = Math.max(...submissions.filter(s => s.assignmentId === a.id).map(s => s.timestamp?.seconds || 0), 0);
-    const latestB = Math.max(...submissions.filter(s => s.assignmentId === b.id).map(s => s.timestamp?.seconds || 0), 0);
-    return latestB - latestA;
+
+  // Group by course+stream, sorted by most-recent submission within each group
+  const groupMap = {};
+  activeAssignments.forEach(a => {
+    const key = `${a.course}${a.stream ? ' ' + a.stream : ''}`;
+    if (!groupMap[key]) groupMap[key] = [];
+    groupMap[key].push(a);
   });
+  // Sort each group's assignments by latest submission desc
+  Object.values(groupMap).forEach(arr => arr.sort((a, b) => {
+    const la = Math.max(...submissions.filter(s => s.assignmentId === a.id).map(s => s.timestamp?.seconds || 0), 0);
+    const lb = Math.max(...submissions.filter(s => s.assignmentId === b.id).map(s => s.timestamp?.seconds || 0), 0);
+    return lb - la;
+  }));
+  const groupKeys = Object.keys(groupMap).sort();
 
   return (
     <div style={{ padding: '24px' }}>
       <h1 className="page-title" style={{ marginBottom: 24 }}>Assignments</h1>
-      {sortedAssignments.length === 0 ? (
+      {groupKeys.length === 0 ? (
         <div className="empty"><span className="empty__icon">📋</span><p>No assignments yet. Add one in Setup.</p></div>
       ) : (
-        <div className="assignment-grid">
-          {sortedAssignments.map(a => {
-            const allDocs  = submissions.filter(s => s.assignmentId === a.id);
-            const isActualSubmission = s =>
-              s.submitted === true || (!('submitted' in s) && (s.response || s.plainResponse));
-            const actualSubs = allDocs.filter(isActualSubmission);
-            const helps      = helpByAssignment[a.id] || [];
-            const unmarked   = actualSubs.filter(s => !s.emailSent && s.mark == null).length;
-            const isOpen     = a.isOpen !== false;
+        groupKeys.map(key => {
+          const label   = key.replace('Social ', '').replace(' -', '-');
+          const items   = groupMap[key];
+          const isOpen  = !!openGroups[key];
+          const toMark  = items.reduce((n, a) => {
+            const subs = submissions.filter(s => s.assignmentId === a.id);
+            const isActualSubmission = s => s.submitted === true || (!('submitted' in s) && (s.response || s.plainResponse));
+            return n + subs.filter(s => isActualSubmission(s) && !s.emailSent && s.mark == null).length;
+          }, 0);
 
-            return (
-              <div key={a.id} className={`acard ${!isOpen ? 'acard--closed' : ''}`}
-                onClick={() => { setSelectedAssignment(a); setView('detail'); }}>
-
-                <div className="acard__top">
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, justifyContent: 'space-between' }}>
-                    <div className="acard__name">{a.name}</div>
-                    {/* Open/close toggle */}
-                    <button
-                      className={`open-toggle ${isOpen ? 'open-toggle--open' : 'open-toggle--closed'}`}
-                      onClick={e => toggleOpen(a, e)}
-                      title={isOpen ? 'Close assignment' : 'Open assignment'}
-                    >
-                      {isOpen ? 'Open' : 'Closed'}
-                    </button>
-                  </div>
-                  <div className="acard__course">{a.course}{a.stream ? ` · ${a.stream}` : ''}</div>
-                </div>
-
-                <div className="acard__stats">
-                  <div className="stat-pill">
-                    <span className="stat-pill__num">{allDocs.length}</span>
-                    <span className="stat-pill__label">opened</span>
-                  </div>
-                  <div className="stat-pill">
-                    <span className="stat-pill__num">{actualSubs.length}</span>
-                    <span className="stat-pill__label">submitted</span>
-                  </div>
-                  {unmarked > 0 && (
-                    <div className="stat-pill stat-pill--alert">
-                      <span className="stat-pill__num">{unmarked}</span>
-                      <span className="stat-pill__label">to mark</span>
-                    </div>
-                  )}
-                </div>
-
-                {helps.length > 0 && (
-                  <div className="acard__helps">
-                    {helps.map(h => (
-                      <span key={h.id} className="help-chip">
-                        🙋 {h.studentName.split(' ')[0]}
-                        {h.timestamp && <span className="help-chip__time">{relativeTime(h.timestamp)}</span>}
-                      </span>
-                    ))}
-                  </div>
+          return (
+            <div key={key} style={{ marginBottom: 16 }}>
+              {/* Group header */}
+              <div
+                onClick={() => toggleGroup(key)}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: isOpen ? '8px 8px 0 0' : 8, cursor: 'pointer', userSelect: 'none' }}
+              >
+                <span style={{ fontSize: 12, color: 'var(--text-dim)', width: 12 }}>{isOpen ? '▼' : '▶'}</span>
+                <span style={{ fontWeight: 700, fontSize: 15, flex: 1 }}>{label}</span>
+                <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{items.length} assignment{items.length !== 1 ? 's' : ''}</span>
+                {toMark > 0 && (
+                  <span style={{ fontSize: 11, background: 'var(--danger)', color: '#fff', borderRadius: 10, padding: '2px 8px' }}>
+                    {toMark} to mark
+                  </span>
                 )}
               </div>
-            );
-          })}
-        </div>
+              {/* Cards */}
+              {isOpen && (
+                <div className="assignment-grid" style={{ border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 8px 8px', padding: 12 }}>
+                  {items.map(a => {
+                    const allDocs  = submissions.filter(s => s.assignmentId === a.id);
+                    const isActualSubmission = s => s.submitted === true || (!('submitted' in s) && (s.response || s.plainResponse));
+                    const actualSubs = allDocs.filter(isActualSubmission);
+                    const helps      = helpByAssignment[a.id] || [];
+                    const unmarked   = actualSubs.filter(s => !s.emailSent && s.mark == null).length;
+                    const isOpen_    = a.isOpen !== false;
+
+                    return (
+                      <div key={a.id} className={`acard ${!isOpen_ ? 'acard--closed' : ''}`}
+                        onClick={() => { setSelectedAssignment(a); setView('detail'); }}>
+                        <div className="acard__top">
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, justifyContent: 'space-between' }}>
+                            <div className="acard__name">{a.name}</div>
+                            <button
+                              className={`open-toggle ${isOpen_ ? 'open-toggle--open' : 'open-toggle--closed'}`}
+                              onClick={e => toggleOpen(a, e)}
+                              title={isOpen_ ? 'Close assignment' : 'Open assignment'}
+                            >
+                              {isOpen_ ? 'Open' : 'Closed'}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="acard__stats">
+                          <div className="stat-pill">
+                            <span className="stat-pill__num">{allDocs.length}</span>
+                            <span className="stat-pill__label">opened</span>
+                          </div>
+                          <div className="stat-pill">
+                            <span className="stat-pill__num">{actualSubs.length}</span>
+                            <span className="stat-pill__label">submitted</span>
+                          </div>
+                          {unmarked > 0 && (
+                            <div className="stat-pill stat-pill--alert">
+                              <span className="stat-pill__num">{unmarked}</span>
+                              <span className="stat-pill__label">to mark</span>
+                            </div>
+                          )}
+                        </div>
+                        {helps.length > 0 && (
+                          <div className="acard__helps">
+                            {helps.map(h => (
+                              <span key={h.id} className="help-chip">
+                                🙋 {h.studentName.split(' ')[0]}
+                                {h.timestamp && <span className="help-chip__time">{relativeTime(h.timestamp)}</span>}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })
       )}
     </div>
   );
