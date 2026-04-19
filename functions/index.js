@@ -2,14 +2,70 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
+const { GoogleGenAI } = require('@google/genai');
 
 admin.initializeApp();
 
 const RESEND_API_KEY = defineSecret('RESEND_API_KEY');
+const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
+
+const TEACHER_EMAIL = process.env.TEACHER_EMAIL || 'amcrae@rvschools.ab.ca';
+
+exports.extractRubric = onCall({ secrets: [GEMINI_API_KEY], timeoutSeconds: 60 }, async (request) => {
+  const callerEmail  = request.auth?.token?.email;
+  if (callerEmail !== TEACHER_EMAIL) {
+    throw new HttpsError('permission-denied', 'Only the teacher can extract rubrics.');
+  }
+
+  const { base64Data, mimeType } = request.data;
+  if (!base64Data) {
+    throw new HttpsError('invalid-argument', 'Missing base64Data parameter.');
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY.value() });
+    
+    const promptText = `
+You are an expert educational assistant parsing marking rubrics.
+Read the provided document and extract the rubric categories and descriptors.
+Output ONLY strict, valid JSON matching this schema:
+{
+  "categories": [
+    {
+      "name": "string (e.g. Content, Mechanics)",
+      "descriptors": [
+        { "text": "string (the description of the milestone)", "points": number (number, e.g. 5) }
+      ]
+    }
+  ]
+}
+Be precise. Return the raw JSON without any markdown formatting wrappers.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{
+        role: 'user',
+        parts: [
+          { inlineData: { data: base64Data, mimeType: mimeType || 'application/pdf' } },
+          { text: promptText }
+        ]
+      }],
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const parsed = JSON.parse(response.text);
+    return parsed;
+  } catch (err) {
+    console.error('LLM Extraction Error:', err);
+    throw new HttpsError('internal', 'Failed to extract rubric data.', err.message);
+  }
+});
 
 exports.sendMark = onCall({ secrets: [RESEND_API_KEY] }, async (request) => {
   const callerEmail  = request.auth?.token?.email;
-  const teacherEmail = process.env.TEACHER_EMAIL || 'amcrae@rvschools.ab.ca';
+  const teacherEmail = TEACHER_EMAIL;
 
   if (callerEmail !== teacherEmail) {
     throw new HttpsError('permission-denied', 'Only the teacher can send marks.');

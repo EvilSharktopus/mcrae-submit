@@ -1,7 +1,8 @@
 // src/teacher/Setup.jsx
-import { useEffect, useState } from 'react';
-import { db } from '../firebase';
+import { useEffect, useState, useRef } from 'react';
+import { db, functions } from '../firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { exportCSV, stripHtml, currentSchoolYear } from '../utils/exportUtils';
 import SectionsPanel from './SectionsPanel';
 import scrapedAssignments from '../data/scraped-assignments.json';
@@ -103,14 +104,67 @@ function RubricBuilder({ onSaved }) {
     } finally { setSaving(false); }
   };
 
+  const fileInputRef = useRef(null);
+  const [extracting, setExtracting] = useState(false);
+
+  const handlePdfUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setExtracting(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (rev) => {
+        try {
+          const base64Data = rev.target.result.split(',')[1];
+          const extractRubric = httpsCallable(functions, 'extractRubric');
+          const res = await extractRubric({ base64Data, mimeType: file.type });
+          const parsed = res.data;
+          
+          if (parsed && parsed.categories && parsed.categories.length > 0) {
+            setCategories(parsed.categories);
+            if (!name) setName(file.name.replace('.pdf', '').replace(/[-_]/g, ' '));
+          } else {
+             alert('Could not find rubric structure in the document.');
+          }
+        } catch (err) {
+          console.error('Extraction error:', err);
+          alert('Extraction failed: ' + err.message);
+        } finally {
+          setExtracting(false);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('File read error:', err);
+      setExtracting(false);
+    }
+  };
+
   return (
     <div className="setup-section card">
       <h2 className="setup-section__title">Add Rubric</h2>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Load preset:</span>
         {Object.keys(RUBRIC_PRESETS).map(key => (
           <button key={key} className="btn btn--secondary btn--sm" onClick={() => loadPreset(key)}>{key}</button>
         ))}
+        <span style={{ fontSize: 12, color: 'var(--text-dim)', marginLeft: 8 }}>or</span>
+        <button 
+          className="btn btn--primary btn--sm" 
+          onClick={() => fileInputRef.current?.click()}
+          disabled={extracting}
+          style={{ background: 'var(--accent)' }}
+        >
+          {extracting ? 'Extracting...' : '📄 Extract from PDF'}
+        </button>
+        <input 
+          type="file" 
+          accept="application/pdf,image/png,image/jpeg" 
+          style={{ display: 'none' }} 
+          ref={fileInputRef} 
+          onChange={handlePdfUpload} 
+        />
       </div>
       <div className="field">
         <label>Rubric Name</label>
