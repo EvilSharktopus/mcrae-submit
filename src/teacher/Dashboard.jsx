@@ -185,7 +185,10 @@ export default function Dashboard() {
                         {subTime ? relativeTime(subTime) : '—'}
                       </td>
                       <td>
-                        {sub.emailSent   && <span className="badge badge--sent">Marked</span>}
+                        {sub.emailSent && <>
+                          <span className="badge badge--sent">Marked</span>
+                          {sub.mark != null && <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginLeft: 6 }}>{sub.mark}</span>}
+                        </>}
                         {!sub.emailSent && subbed  && <span className="badge badge--pending">Submitted</span>}
                         {!sub.emailSent && !subbed && <span style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600 }}>✏️ Draft</span>}
                       </td>
