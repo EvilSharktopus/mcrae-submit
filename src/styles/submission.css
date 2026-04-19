@@ -86,7 +86,10 @@
 
 /* Editor body */
 .editor-body {
-  flex: 1; padding: 18px 22px; outline: none; overflow-y: auto;
+  flex: 1;
+  /* Center content at ~75ch (essay width) — background fills full pane */
+  padding: 28px max(28px, calc((100% - 75ch) / 2));
+  outline: none; overflow-y: auto;
   font-size: 14px; line-height: 1.75; color: var(--text);
   background: var(--bg-input); caret-color: var(--accent);
   min-height: 0; word-break: break-word;
