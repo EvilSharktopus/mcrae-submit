@@ -226,11 +226,13 @@ export default function Dashboard() {
       ) : (
         <div className="assignment-grid">
           {sortedAssignments.map(a => {
-            const subs    = submissions.filter(s => s.assignmentId === a.id);
-            const acc     = accesses.filter(ac => ac.assignmentId === a.id);
-            const helps   = helpByAssignment[a.id] || [];
-            const unmarked = subs.filter(s => !s.emailSent && s.mark == null).length;
-            const isOpen  = a.isOpen !== false;
+            const allDocs  = submissions.filter(s => s.assignmentId === a.id);
+            const isActualSubmission = s =>
+              s.submitted === true || (!('submitted' in s) && (s.response || s.plainResponse));
+            const actualSubs = allDocs.filter(isActualSubmission);
+            const helps      = helpByAssignment[a.id] || [];
+            const unmarked   = actualSubs.filter(s => !s.emailSent && s.mark == null).length;
+            const isOpen     = a.isOpen !== false;
 
             return (
               <div key={a.id} className={`acard ${!isOpen ? 'acard--closed' : ''}`}
@@ -253,11 +255,11 @@ export default function Dashboard() {
 
                 <div className="acard__stats">
                   <div className="stat-pill">
-                    <span className="stat-pill__num">{acc.length}</span>
-                    <span className="stat-pill__label">accessed</span>
+                    <span className="stat-pill__num">{allDocs.length}</span>
+                    <span className="stat-pill__label">opened</span>
                   </div>
                   <div className="stat-pill">
-                    <span className="stat-pill__num">{subs.length}</span>
+                    <span className="stat-pill__num">{actualSubs.length}</span>
                     <span className="stat-pill__label">submitted</span>
                   </div>
                   {unmarked > 0 && (
