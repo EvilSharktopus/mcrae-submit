@@ -1,25 +1,41 @@
 // src/teacher/MarkingView.jsx
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { db, functions } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import '../styles/marking.css';
 
-export default function MarkingView({ submission, assignment, rubric, onClose }) {
-  // selections: { [categoryIndex]: { descriptorIndex, points } }
+export default function MarkingView({ submission, assignment, rubric, onClose, nextStudent, onNextStudent }) {
   const [selections, setSelections] = useState({});
-  const [feedback, setFeedback] = useState(submission.feedback || '');
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(submission.emailSent || false);
+  const [feedback, setFeedback]     = useState(submission.feedback || '');
+  const [sending, setSending]       = useState(false);
+  const [sent, setSent]             = useState(submission.emailSent || false);
+  const [saveStatus, setSaveStatus] = useState(''); // '' | 'saving' | 'saved'
+  const autoSaveTimer               = useRef(null);
 
   const totalMark = Object.values(selections).reduce((sum, s) => sum + (s?.points || 0), 0);
+
+  // ── Auto-save feedback ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (sent) return; // don't save after sending
+    clearTimeout(autoSaveTimer.current);
+    setSaveStatus('saving');
+    autoSaveTimer.current = setTimeout(async () => {
+      try {
+        await updateDoc(doc(db, 'submissions', submission.id), { feedback: feedback.trim() });
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus(''), 2000);
+      } catch {
+        setSaveStatus('');
+      }
+    }, 1500);
+    return () => clearTimeout(autoSaveTimer.current);
+  }, [feedback]);
 
   const selectDescriptor = (catIdx, descIdx, points) => {
     setSelections(prev => {
       if (prev[catIdx]?.descriptorIndex === descIdx) {
-        const next = { ...prev };
-        delete next[catIdx];
-        return next;
+        const next = { ...prev }; delete next[catIdx]; return next;
       }
       return { ...prev, [catIdx]: { descriptorIndex: descIdx, points } };
     });
@@ -30,23 +46,16 @@ export default function MarkingView({ submission, assignment, rubric, onClose })
     setSending(true);
     try {
       const mark = rubric ? totalMark : null;
-      // Save mark + feedback to Firestore
-      await updateDoc(doc(db, 'submissions', submission.id), {
-        mark,
-        feedback: feedback.trim(),
-      });
-
-      // Call Cloud Function to send email
+      await updateDoc(doc(db, 'submissions', submission.id), { mark, feedback: feedback.trim() });
       const sendMark = httpsCallable(functions, 'sendMark');
       await sendMark({
-        submissionId: submission.id,
-        studentEmail: submission.studentEmail,
-        studentName: submission.studentName,
+        submissionId:   submission.id,
+        studentEmail:   submission.studentEmail,
+        studentName:    submission.studentName,
         assignmentName: assignment.name,
         mark,
         feedback: feedback.trim(),
       });
-
       await updateDoc(doc(db, 'submissions', submission.id), { emailSent: true });
       setSent(true);
     } catch (err) {
@@ -62,17 +71,23 @@ export default function MarkingView({ submission, assignment, rubric, onClose })
       <div className="marking-header">
         <button className="btn btn--secondary btn--sm" onClick={onClose}>← Back</button>
         <div>
-          <div className="marking-header__title">{submission.studentName}</div>
+          <div className="marking-header__title">
+            {submission.studentName}
+            {submission.isResubmission && <span className="resubmission-badge" style={{ marginLeft: 8 }}>revision</span>}
+          </div>
           <div className="marking-header__sub">{assignment?.name} · {submission.studentEmail}</div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+          {saveStatus === 'saving' && <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Saving…</span>}
+          {saveStatus === 'saved'  && <span style={{ fontSize: 12, color: 'var(--success)' }}>✓ Saved</span>}
           {sent && <span className="badge badge--sent">Email Sent</span>}
-          <button
-            className="btn btn--success"
-            onClick={handleSendMark}
-            disabled={sending || sent}
-          >
-            {sent ? '✓ Sent' : sending ? 'Sending...' : 'Send Mark'}
+          {nextStudent && (
+            <button className="btn btn--secondary btn--sm" onClick={onNextStudent}>
+              Next student →
+            </button>
+          )}
+          <button className="btn btn--success" onClick={handleSendMark} disabled={sending || sent}>
+            {sent ? '✓ Sent' : sending ? 'Sending…' : 'Send Mark'}
           </button>
         </div>
       </div>
@@ -88,10 +103,7 @@ export default function MarkingView({ submission, assignment, rubric, onClose })
               </span>
             )}
           </div>
-          <div
-            className="marking-response"
-            dangerouslySetInnerHTML={{ __html: submission.response }}
-          />
+          <div className="marking-response" dangerouslySetInnerHTML={{ __html: submission.response }} />
         </div>
 
         {/* Right — Rubric + feedback */}
@@ -106,9 +118,7 @@ export default function MarkingView({ submission, assignment, rubric, onClose })
                   <div key={catIdx} className="rubric-category">
                     <div className="rubric-category__name">
                       {cat.name}
-                      {selections[catIdx] != null && (
-                        <span className="rubric-category__points">+{selections[catIdx].points}</span>
-                      )}
+                      {selections[catIdx] != null && <span className="rubric-category__points">+{selections[catIdx].points}</span>}
                     </div>
                     <div className="rubric-descriptors">
                       {cat.descriptors?.map((desc, descIdx) => (
@@ -135,7 +145,7 @@ export default function MarkingView({ submission, assignment, rubric, onClose })
             className="marking-feedback"
             value={feedback}
             onChange={e => setFeedback(e.target.value)}
-            placeholder="Write feedback for the student..."
+            placeholder="Write feedback for the student…"
             rows={6}
             disabled={sent}
           />

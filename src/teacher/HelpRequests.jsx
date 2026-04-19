@@ -44,6 +44,18 @@ export default function HelpRequests() {
                   <span className={`badge ${r.type === 'come' ? 'badge--pending' : 'badge--marked'}`}>
                     {r.type === 'come' ? '📍 Come see me' : '💬 Answer here'}
                   </span>
+                  {r.timestamp && (
+                    <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 'auto' }}>
+                      {(() => {
+                        const ms = r.timestamp.toDate ? r.timestamp.toDate().getTime() : new Date(r.timestamp).getTime();
+                        const d = Date.now() - ms;
+                        if (d < 60000) return 'just now';
+                        if (d < 3600000) return `${Math.floor(d/60000)}m ago`;
+                        if (d < 86400000) return `${Math.floor(d/3600000)}h ago`;
+                        return r.timestamp.toDate ? r.timestamp.toDate().toLocaleDateString() : '';
+                      })()}
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: r.message ? 8 : 0 }}>
                   {r.assignmentName} · {r.studentEmail}

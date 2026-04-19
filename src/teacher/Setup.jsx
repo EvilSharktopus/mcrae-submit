@@ -1,7 +1,7 @@
 // src/teacher/Setup.jsx
 import { useEffect, useState } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc } from 'firebase/firestore';
 import '../styles/setup.css';
 
 // ── Rubric Builder ─────────────────────────────────────────────────────────
@@ -177,14 +177,14 @@ function SavedAssignments({ assignments, rubrics, onDelete }) {
               {rubric && <span style={{ fontSize: 12, color: 'var(--text-dim)', display: 'block', marginTop: 2 }}>Rubric: {rubric.name}</span>}
             </div>
             <button
-              className="btn btn--danger btn--sm"
+              className="btn btn--secondary btn--sm"
               onClick={async () => {
-                if (!window.confirm(`Delete "${a.name}"? This removes the assignment but keeps all student submissions.`)) return;
-                await deleteDoc(doc(db, 'assignments', a.id));
+                if (!window.confirm(`Archive "${a.name}"? It will be hidden from students but all submissions are kept.`)) return;
+                await updateDoc(doc(db, 'assignments', a.id), { archived: true });
                 onDelete?.();
               }}
             >
-              Delete
+              Archive
             </button>
           </div>
         );

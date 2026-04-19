@@ -9,6 +9,26 @@
 .submission-header__info { display: flex; align-items: center; gap: 10px; flex: 1; }
 .submission-header__title { font-size: 15px; font-weight: 600; }
 .submission-header__stream { font-size: 12px; color: var(--text-dim); background: var(--bg-card); padding: 2px 8px; border-radius: 4px; }
+.submission-header__closed { font-size: 11px; font-weight: 700; color: var(--danger); background: rgba(224,92,92,0.15); padding: 2px 8px; border-radius: 4px; }
+
+/* Resubmission bar */
+.resubmission-bar {
+  padding: 8px 16px; background: rgba(123,143,181,0.1); border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.resubmission-bar__label {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-dim);
+  cursor: pointer; user-select: none;
+}
+.resubmission-bar__label input { accent-color: var(--accent); cursor: pointer; }
+
+/* Resubmission badge (in tables / marking header) */
+.resubmission-badge {
+  display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; background: rgba(255,193,70,0.2); color: #c8952a;
+  border: 1px solid rgba(255,193,70,0.35); border-radius: 20px; padding: 1px 7px;
+  vertical-align: middle;
+}
 
 .theme-toggle {
   background: none; border: 1px solid var(--border); border-radius: var(--radius);
