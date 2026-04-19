@@ -21,16 +21,16 @@
   --radius-lg: 10px;
 }
 
-/* Light theme */
+/* Light theme — soft warm grey, not glaring white */
 [data-theme="light"] {
-  --bg: #f0f2f7;
-  --bg-nav: #ffffff;
-  --bg-card: #ffffff;
-  --bg-input: #f8f9fc;
-  --bg-hover: #e4e8f0;
-  --text: #1a1d2e;
-  --text-dim: #6b7280;
-  --border: #d1d5e0;
+  --bg: #e8eaf0;
+  --bg-nav: #eceef4;
+  --bg-card: #f0f2f7;
+  --bg-input: #dde0ea;
+  --bg-hover: #d5d9e6;
+  --text: #1e2132;
+  --text-dim: #5a607a;
+  --border: #c4c9d8;
 }
 
 html, body, #root {

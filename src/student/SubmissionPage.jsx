@@ -161,7 +161,7 @@ export default function SubmissionPage() {
           {assignment.stream && <span className="submission-header__stream">{assignment.stream}</span>}
         </div>
         <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
-          {theme === 'dark' ? '☀️' : '🌙'}
+          {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
         </button>
       </div>
 

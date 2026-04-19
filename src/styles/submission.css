@@ -17,7 +17,18 @@
 }
 .theme-toggle:hover { border-color: var(--accent); }
 
-.submission-page .split { flex: 1; overflow: hidden; }
+.submission-page .split {
+  flex: 1;
+  overflow: hidden;
+  height: auto; /* let flex: 1 control height, not the global calc */
+}
+
+/* Make right pane a flex column so work-pane stretches full height */
+.split__pane--work {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
 /* ── Left pane: Assignment info ── */
 .assignment-info-pane { overflow-y: auto; padding: 28px; background: var(--bg); }
