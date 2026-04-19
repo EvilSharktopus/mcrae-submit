@@ -26,6 +26,7 @@ export default function AssignmentList({ section }) {
         if (section) {
           all = all.filter(a =>
             !a.archived &&
+            a.isOpen !== false &&
             a.course === section.course &&
             (!a.stream || !section.stream || a.stream === section.stream)
           );
@@ -64,24 +65,18 @@ export default function AssignmentList({ section }) {
       ) : (
         <div>
           {assignments.map(a => {
-            const sub      = submissions[a.id];
-            const isClosed = a.isOpen === false;
+            const sub = submissions[a.id];
             return (
               <div
                 key={a.id}
                 className="card"
-                style={{
-                  cursor: 'pointer', display: 'flex', alignItems: 'center',
-                  justifyContent: 'space-between', gap: 12, marginBottom: 10,
-                  opacity: isClosed ? 0.65 : 1,
-                }}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}
                 onClick={() => navigate(`/submit/${a.id}`)}
               >
                 <div>
                   <div style={{ fontWeight: 600, marginBottom: 3 }}>{a.name}</div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     {a.stream && <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{a.stream}</span>}
-                    {isClosed  && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--danger)' }}>Closed</span>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>

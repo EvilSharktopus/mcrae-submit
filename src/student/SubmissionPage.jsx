@@ -278,6 +278,12 @@ export default function SubmissionPage() {
   const showSuccess = isSubmitted && !isRevisionMode;
   const showEditor  = !showSuccess;
 
+  // Closed assignment — send student back silently
+  if (isClosed) {
+    navigate('/', { replace: true });
+    return null;
+  }
+
   return (
     <div className="submission-page">
       {/* Header */}
@@ -286,7 +292,6 @@ export default function SubmissionPage() {
         <div className="submission-header__info">
           <h1 className="submission-header__title">{assignment.name}</h1>
           {assignment.stream && <span className="submission-header__stream">{assignment.stream}</span>}
-          {isClosed && <span className="submission-header__closed">Closed</span>}
         </div>
         <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
           {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
