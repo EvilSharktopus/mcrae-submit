@@ -57,37 +57,42 @@ export default function SubmissionPage() {
   // ── Load assignment + existing draft ─────────────────────────────────────
   useEffect(() => {
     async function load() {
-      const [aDoc, subSnap] = await Promise.all([
-        getDoc(doc(db, 'assignments', assignmentId)),
-        getDoc(docRef),
-      ]);
-      if (!aDoc.exists()) { navigate('/'); return; }
-      setAssignment({ id: aDoc.id, ...aDoc.data() });
+      try {
+        const [aDoc, subSnap] = await Promise.all([
+          getDoc(doc(db, 'assignments', assignmentId)),
+          getDoc(docRef),
+        ]);
+        if (!aDoc.exists()) { navigate('/'); return; }
+        setAssignment({ id: aDoc.id, ...aDoc.data() });
 
-      if (subSnap.exists()) {
-        setDraftData(subSnap.data());
-      } else {
-        // Create the draft doc immediately on first open
-        const initial = {
-          assignmentId,
-          studentName:    user.displayName,
-          studentEmail:   user.email,
-          response:       '',
-          plainResponse:  '',
-          wordCount:      0,
-          lastSaved:      serverTimestamp(),
-          submitted:      false,
-          submittedAt:    null,
-          isResubmission: false,
-          mark:           null,
-          feedback:       null,
-          emailSent:      false,
-          createdAt:      serverTimestamp(),
-        };
-        await setDoc(docRef, initial);
-        setDraftData(initial);
+        if (subSnap.exists()) {
+          setDraftData(subSnap.data());
+        } else {
+          // Create the draft doc immediately on first open
+          const initial = {
+            assignmentId,
+            studentName:    user.displayName,
+            studentEmail:   user.email,
+            response:       '',
+            plainResponse:  '',
+            wordCount:      0,
+            lastSaved:      serverTimestamp(),
+            submitted:      false,
+            submittedAt:    null,
+            isResubmission: false,
+            mark:           null,
+            feedback:       null,
+            emailSent:      false,
+            createdAt:      serverTimestamp(),
+          };
+          await setDoc(docRef, initial);
+          setDraftData(initial);
+        }
+      } catch (err) {
+        console.error('SubmissionPage load error:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     load();
   }, [assignmentId, user.email]);

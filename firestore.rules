@@ -17,6 +17,7 @@ service cloud.firestore {
     match /submissions/{id} {
       allow read: if request.auth != null
         && (request.auth.token.email == 'amcrae@rvschools.ab.ca'
+            || resource == null                                        // doc doesn't exist yet
             || resource.data.studentEmail == request.auth.token.email);
       allow write: if request.auth.token.email == 'amcrae@rvschools.ab.ca'
         || (request.auth != null
