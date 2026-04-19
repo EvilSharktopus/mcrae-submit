@@ -22,5 +22,23 @@ service cloud.firestore {
             || resource.data.studentEmail == request.auth.token.email);
       allow update: if request.auth.token.email == 'amcrae@rvschools.ab.ca';
     }
+
+    // Accesses — students write their own, teacher reads all
+    match /accesses/{id} {
+      allow read: if request.auth.token.email == 'amcrae@rvschools.ab.ca';
+      allow write: if request.auth != null;
+    }
+
+    // Help requests — students create, teacher reads/resolves
+    match /help_requests/{id} {
+      allow create: if request.auth != null;
+      allow read, update: if request.auth.token.email == 'amcrae@rvschools.ab.ca';
+    }
+
+    // Archived submission years (submissions_YYYY_YYYY) — teacher only
+    match /{archiveCollection}/{id} {
+      allow read, write: if request.auth.token.email == 'amcrae@rvschools.ab.ca'
+        && archiveCollection.matches('submissions_[0-9]{4}_[0-9]{4}');
+    }
   }
 }

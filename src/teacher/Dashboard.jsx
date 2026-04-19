@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import {
-  collection, getDocs, query, orderBy, where, onSnapshot, doc, updateDoc,
+  collection, getDocs, query, where, onSnapshot, doc, updateDoc,
 } from 'firebase/firestore';
 import { exportCSV, stripHtml } from '../utils/exportUtils';
 import MarkingView from './MarkingView';
@@ -32,17 +32,31 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
-    const [aSnap, sSnap, rSnap, accSnap] = await Promise.all([
-      getDocs(collection(db, 'assignments')),
-      getDocs(query(collection(db, 'submissions'), orderBy('timestamp', 'desc'))),
-      getDocs(collection(db, 'rubrics')),
-      getDocs(collection(db, 'accesses')),
-    ]);
-    setAssignments(aSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-    setSubmissions(sSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-    setRubrics(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-    setAccesses(accSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-    setLoading(false);
+    try {
+      // Core data — assignments, submissions, rubrics must succeed
+      const [aSnap, sSnap, rSnap] = await Promise.all([
+        getDocs(collection(db, 'assignments')),
+        getDocs(collection(db, 'submissions')),   // no orderBy — sort in JS
+        getDocs(collection(db, 'rubrics')),
+      ]);
+      setAssignments(aSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const subs = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      subs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+      setSubmissions(subs);
+      setRubrics(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
+      // Accesses — new collection, load separately so rules issues don't break the grid
+      try {
+        const accSnap = await getDocs(collection(db, 'accesses'));
+        setAccesses(accSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) {
+        console.warn('Could not load accesses (rules may need deploying):', e.message);
+      }
+    } catch (err) {
+      console.error('Dashboard load error:', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
