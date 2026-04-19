@@ -1,15 +1,64 @@
 /* src/styles/dashboard.css */
+
+/* ── Assignment grid ── */
+.assignment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.acard {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px;
+  cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.acard:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.acard__name { font-size: 16px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
+.acard__course { font-size: 12px; color: var(--text-dim); }
+
+.acard__stats { display: flex; gap: 10px; }
+.stat-pill {
+  display: flex; flex-direction: column; align-items: center;
+  background: var(--bg-input); border-radius: var(--radius); padding: 8px 12px;
+  flex: 1;
+}
+.stat-pill__num { font-size: 24px; font-weight: 700; line-height: 1; }
+.stat-pill__label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+.acard__helps { display: flex; flex-wrap: wrap; gap: 6px; }
+.help-chip {
+  font-size: 12px; background: rgba(224,92,92,0.12); color: #e07070;
+  border: 1px solid rgba(224,92,92,0.25); border-radius: 20px;
+  padding: 3px 10px; font-weight: 500;
+}
+
+/* ── Detail view stats ── */
+.detail-stat { display: flex; flex-direction: column; align-items: center; }
+.detail-stat__num { font-size: 22px; font-weight: 700; line-height: 1; }
+.detail-stat__label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.4px; }
+
+/* ── Student table ── */
+.student-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.student-table th {
+  text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-dim); padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.student-table td { padding: 13px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.student-table tbody tr:last-child td { border-bottom: none; }
+.student-table tbody tr.clickable-row { cursor: pointer; }
+.student-table tbody tr.clickable-row:hover { background: var(--bg-hover); }
+
+/* ── Old flat-list styles (kept for compatibility) ── */
 .dashboard-assignment-header {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 0; margin-bottom: 8px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
 }
 .dashboard-assignment-header h2 { font-size: 15px; font-weight: 700; }
-
-.dashboard-submission-row {
-  cursor: pointer; display: flex; align-items: center;
-  justify-content: space-between; gap: 12px;
-  transition: background 0.12s;
-}
+.dashboard-submission-row { cursor: pointer; transition: background 0.1s; }
 .dashboard-submission-row:hover { background: var(--bg-hover); }
 .dashboard-submission-row__student { display: flex; flex-direction: column; gap: 2px; }
 .dashboard-submission-row__email { font-size: 12px; color: var(--text-dim); }

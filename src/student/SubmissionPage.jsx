@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, addDoc, getDocs, query, where, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, serverTimestamp, doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../auth/ThemeContext';
 import '../styles/submission.css';
@@ -38,7 +38,14 @@ export default function SubmissionPage() {
         getDocs(query(collection(db, 'submissions'), where('assignmentId', '==', assignmentId), where('studentEmail', '==', user.email))),
       ]);
       if (!aDoc.exists()) { navigate('/'); return; }
-      setAssignment({ id: aDoc.id, ...aDoc.data() });
+      const a = { id: aDoc.id, ...aDoc.data() };
+      setAssignment(a);
+      // Track that this student opened the assignment (upsert, no duplicates)
+      setDoc(
+        doc(db, 'accesses', `${assignmentId}__${user.email}`),
+        { assignmentId, studentName: user.displayName, studentEmail: user.email, lastOpened: serverTimestamp() },
+        { merge: true }
+      );
       if (!sSnap.empty) {
         setExistingSub(sSnap.docs[0].data());
       }

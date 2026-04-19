@@ -1,7 +1,7 @@
 // src/teacher/Setup.jsx
 import { useEffect, useState } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import '../styles/setup.css';
 
 // ── Rubric Builder ─────────────────────────────────────────────────────────
@@ -162,7 +162,7 @@ function SavedRubrics({ rubrics }) {
   );
 }
 
-function SavedAssignments({ assignments, rubrics }) {
+function SavedAssignments({ assignments, rubrics, onDelete }) {
   if (!assignments.length) return null;
   return (
     <div className="setup-section">
@@ -171,11 +171,21 @@ function SavedAssignments({ assignments, rubrics }) {
         const rubric = rubrics.find(r => r.id === a.rubricId);
         return (
           <div key={a.id} className="card setup-list-item">
-            <div>
+            <div style={{ flex: 1 }}>
               <strong>{a.name}</strong>
               <span style={{ fontSize: 12, color: 'var(--text-dim)', marginLeft: 10 }}>{a.course} {a.stream}</span>
+              {rubric && <span style={{ fontSize: 12, color: 'var(--text-dim)', display: 'block', marginTop: 2 }}>Rubric: {rubric.name}</span>}
             </div>
-            {rubric && <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Rubric: {rubric.name}</span>}
+            <button
+              className="btn btn--danger btn--sm"
+              onClick={async () => {
+                if (!window.confirm(`Delete "${a.name}"? This removes the assignment but keeps all student submissions.`)) return;
+                await deleteDoc(doc(db, 'assignments', a.id));
+                onDelete?.();
+              }}
+            >
+              Delete
+            </button>
           </div>
         );
       })}
@@ -213,7 +223,7 @@ export default function Setup() {
         </div>
         <div>
           <AssignmentForm rubrics={rubrics} onSaved={load} />
-          <SavedAssignments assignments={assignments} rubrics={rubrics} />
+          <SavedAssignments assignments={assignments} rubrics={rubrics} onDelete={load} />
         </div>
       </div>
     </div>
