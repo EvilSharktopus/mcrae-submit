@@ -14,7 +14,8 @@
   flex: 1; overflow: hidden;
 }
 .marking-pane {
-  padding: 20px; overflow-y: auto; border-right: 1px solid var(--border);
+  padding: 20px; overflow-y: auto;
+  border-right: 2px solid var(--border);
   display: flex; flex-direction: column; gap: 10px;
 }
 .marking-pane:last-child { border-right: none; }
