@@ -54,8 +54,10 @@ export default function SubmissionPage() {
   const saveTimer         = useRef(null);
   const splitRef          = useRef(null);
   const isDraggingRef     = useRef(false);
-  const [splitPct,     setSplitPct]     = useState(40);   // left pane %
-  const [isDragging,   setIsDragging]   = useState(false); // overlay blocker
+  const [splitPct,     setSplitPct]     = useState(40);
+  const [isDragging,   setIsDragging]   = useState(false);
+  const [isListening,  setIsListening]  = useState(false);
+  const recognitionRef = useRef(null);
   const docRef            = doc(db, 'submissions', `${assignmentId}__${user.email}`);
 
   // ── Drag-to-resize split ───────────────────────────────────────
@@ -211,10 +213,70 @@ export default function SubmissionPage() {
   const blockPaste = (e) => { e.preventDefault(); e.stopPropagation(); };
   const blockCopy  = (e) => { e.preventDefault(); e.stopPropagation(); };
 
-  // ── Rich text commands ────────────────────────────────────────────────────
   const execCmd = (cmd, value = null) => {
     document.execCommand(cmd, false, value);
     editorRef.current?.focus();
+  };
+
+  // ── Speech-to-text ───────────────────────────────────────────────────────
+  const toggleListening = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert('Speech recognition is not supported in this browser. Try Chrome or Edge.'); return; }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const rec = new SR();
+    rec.lang = 'en-CA';
+    rec.continuous = true;
+    rec.interimResults = false;
+
+    rec.onresult = (e) => {
+      const transcript = Array.from(e.results)
+        .slice(e.resultIndex)
+        .filter(r => r.isFinal)
+        .map(r => r[0].transcript)
+        .join(' ');
+      if (!transcript) return;
+
+      // Insert at current cursor position in the editor
+      const editor = editorRef.current;
+      if (!editor) return;
+      editor.focus();
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        // Add a space before if cursor isn't at start
+        const text = document.createTextNode(
+          (range.startOffset > 0 ? ' ' : '') + transcript
+        );
+        range.insertNode(text);
+        range.setStartAfter(text);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        // Fallback: append to end
+        document.execCommand('insertText', false, ' ' + transcript);
+      }
+      handleInput();
+    };
+
+    rec.onerror = (e) => {
+      if (e.error !== 'aborted') console.error('Speech error:', e.error);
+    };
+
+    rec.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognitionRef.current = rec;
+    rec.start();
+    setIsListening(true);
   };
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -417,6 +479,15 @@ export default function SubmissionPage() {
                   <div className="editor-toolbar__divider" />
                   <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('undo'); }} title="Undo">↩</button>
                   <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('redo'); }} title="Redo">↪</button>
+                  <div className="editor-toolbar__divider" />
+                  <button
+                    className={`editor-toolbar__btn ${isListening ? 'editor-toolbar__btn--mic-active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); toggleListening(); }}
+                    title={isListening ? 'Stop dictating' : 'Dictate (speech to text)'}
+                    style={{ minWidth: 36 }}
+                  >
+                    {isListening ? '🔴' : '🎤'}
+                  </button>
                 </div>
 
                 {/* Editable area */}
