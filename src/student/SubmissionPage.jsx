@@ -99,14 +99,15 @@ export default function SubmissionPage() {
 
   // ── Load assignment + existing draft ─────────────────────────────────────
   useEffect(() => {
+    let unsubAssign;
     async function load() {
       try {
-        const [aDoc, subSnap] = await Promise.all([
-          getDoc(doc(db, 'assignments', assignmentId)),
-          getDoc(docRef),
-        ]);
-        if (!aDoc.exists()) { navigate('/'); return; }
-        setAssignment({ id: aDoc.id, ...aDoc.data() });
+        const subSnap = await getDoc(docRef);
+
+        unsubAssign = onSnapshot(doc(db, 'assignments', assignmentId), aDoc => {
+          if (!aDoc.exists()) { navigate('/'); return; }
+          setAssignment({ id: aDoc.id, ...aDoc.data() });
+        });
 
         if (subSnap.exists()) {
           setDraftData(subSnap.data());
@@ -138,6 +139,7 @@ export default function SubmissionPage() {
       }
     }
     load();
+    return () => { if (unsubAssign) unsubAssign(); };
   }, [assignmentId, user.email]);
 
   // ── Listen for teacher replies & active requests ─────────────────────────
@@ -156,6 +158,8 @@ export default function SubmissionPage() {
         .filter(r => r.resolved && r.reply?.trim() && !r.dismissed)
         .sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
       setTeacherReplies(msgs);
+    }, err => {
+      console.error('Error listening to help requests:', err);
     });
     return () => unsub();
   }, [user.email, assignmentId]);
