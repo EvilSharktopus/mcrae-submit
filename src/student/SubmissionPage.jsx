@@ -526,7 +526,7 @@ export default function SubmissionPage() {
                       title="Dismiss"
                     >×</button>
                     <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Coach McRae replied
+                      Mr. McRae replied
                     </div>
                     {reply.message && (
                       <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 6, fontStyle: 'italic' }}>
