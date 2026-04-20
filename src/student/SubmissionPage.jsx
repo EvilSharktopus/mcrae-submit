@@ -48,6 +48,7 @@ export default function SubmissionPage() {
   const [askMessage,  setAskMessage]  = useState('');
   const [askSending,  setAskSending]  = useState(false);
   const [askSent,     setAskSent]     = useState(false);
+  const [activeRequest, setActiveRequest] = useState(null);
   const [teacherReplies, setTeacherReplies] = useState([]);
 
   const editorRef         = useRef(null);
@@ -139,19 +140,20 @@ export default function SubmissionPage() {
     load();
   }, [assignmentId, user.email]);
 
-  // ── Listen for teacher replies ───────────────────────────────────────────
+  // ── Listen for teacher replies & active requests ─────────────────────────
   useEffect(() => {
     if (!user || !assignmentId) return;
     const q = query(
       collection(db, 'help_requests'),
       where('studentEmail', '==', user.email),
-      where('assignmentId', '==', assignmentId),
-      where('resolved', '==', true)
+      where('assignmentId', '==', assignmentId)
     );
     const unsub = onSnapshot(q, snap => {
-      const msgs = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(r => r.reply?.trim() && !r.dismissed)
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setActiveRequest(all.find(r => !r.resolved) || null);
+      
+      const msgs = all
+        .filter(r => r.resolved && r.reply?.trim() && !r.dismissed)
         .sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
       setTeacherReplies(msgs);
     });
@@ -682,6 +684,15 @@ export default function SubmissionPage() {
               <div className="modal-sent">
                 <div className="modal-sent__icon">✓</div>
                 <p>Mr. McRae has been notified!</p>
+              </div>
+            ) : activeRequest ? (
+              <div className="modal-sent">
+                <div className="modal-sent__icon" style={{ background: '#fef3c7', color: '#d97706' }}>🕒</div>
+                <h3 style={{ margin: '16px 0 8px' }}>Hold tight!</h3>
+                <p>Mr. McRae has received your request and will get to you soon.</p>
+                <div className="modal-footer" style={{ marginTop: 24, justifyContent: 'center' }}>
+                  <button className="btn btn--secondary btn--sm" onClick={() => setAskModal(false)}>Close</button>
+                </div>
               </div>
             ) : (
               <>
