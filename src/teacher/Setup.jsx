@@ -626,30 +626,14 @@ export default function Setup() {
   return (
     <div className="page">
       <h1 className="page-title">Setup</h1>
-      <div className="setup-columns">
-        <div>
-          <RubricBuilder onSaved={load} />
-          <SavedRubrics
-            rubrics={rubrics}
-            assignments={assignments}
-            onAssignmentUpdate={(id, changes) => setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a))}
-          />
-        </div>
-        <div>
-          <AssignmentForm rubrics={rubrics} onSaved={load} />
-          <SavedAssignments
-            assignments={assignments.filter(a => !a.archived)}
-            rubrics={rubrics}
-            onDelete={load}
-            onUpdate={(id, changes) => setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a))}
-          />
-        </div>
+
+      {/* ── Sections & Rosters ── */}
+      <div style={{ marginTop: 8 }}>
+        <SectionsPanel />
       </div>
 
-      {/* ── Export & Archive ── */}
+      {/* ── Export Grades ── */}
       <div style={{ marginTop: 32 }}>
-
-        {/* Global CSV Export */}
         <div className="setup-section card">
           <h2 className="setup-section__title">Export Grades</h2>
           <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 16 }}>
@@ -673,15 +657,38 @@ export default function Setup() {
             {exporting ? 'Exporting…' : '↓ Export CSV'}
           </button>
         </div>
-
       </div>
 
-      {/* ── Sections & Rosters ── */}
-      <div style={{ marginTop: 32 }}>
-        <SectionsPanel />
+      {/* ── Add Rubric / Register Assignment (side by side) ── */}
+      <div className="setup-columns" style={{ marginTop: 32 }}>
+        <div>
+          <RubricBuilder onSaved={load} />
+        </div>
+        <div>
+          <AssignmentForm rubrics={rubrics} onSaved={load} />
+        </div>
       </div>
 
-      {/* ── Archive School Year (bottom of page) ── */}
+      {/* ── Saved Rubrics / Registered Assignments (side by side) ── */}
+      <div className="setup-columns" style={{ marginTop: 32 }}>
+        <div>
+          <SavedRubrics
+            rubrics={rubrics}
+            assignments={assignments}
+            onAssignmentUpdate={(id, changes) => setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a))}
+          />
+        </div>
+        <div>
+          <SavedAssignments
+            assignments={assignments.filter(a => !a.archived)}
+            rubrics={rubrics}
+            onDelete={load}
+            onUpdate={(id, changes) => setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a))}
+          />
+        </div>
+      </div>
+
+      {/* ── Archive School Year (bottom) ── */}
       <div className="setup-section card" style={{ marginTop: 32 }}>
         <h2 className="setup-section__title">Archive School Year</h2>
         <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 8 }}>
