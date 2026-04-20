@@ -446,6 +446,23 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
           {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
 
+        {/* Unit page picker */}
+        <select
+          style={{ ...selStyle, minWidth: 160 }}
+          value={a.unit || ''}
+          title="Unit page on mcraesocial.com"
+          onChange={async e => {
+            const unit = e.target.value;
+            await updateDoc(doc(db, 'assignments', a.id), { unit: unit || '' });
+            onUpdate?.(a.id, { unit });
+          }}
+        >
+          <option value="">— No unit link —</option>
+          {(UNITS_FOR[a.course] || []).map(u => (
+            <option key={u.value} value={u.value}>{u.label}</option>
+          ))}
+        </select>
+
         <button className="btn btn--secondary btn--sm" onClick={() => setCopyOpen(o => !o)}>
           {copyOpen ? '✕' : 'Copy to…'}
         </button>
