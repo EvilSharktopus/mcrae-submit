@@ -36,8 +36,6 @@ export default function AssignmentList({ section }) {
           });
         }
         setAssignments(all);
-
-
         const subMap = {};
         sSnap.docs.forEach(d => { const s = d.data(); subMap[s.assignmentId] = s; });
         setSubmissions(subMap);
@@ -88,10 +86,9 @@ export default function AssignmentList({ section }) {
                   {(() => {
                     const actuallySubmitted = sub && (sub.submitted === true || !('submitted' in sub));
                     const isDraft = sub && sub.submitted === false;
-                    if (sub?.emailSent)        return <span className="badge badge--sent">Marked</span>;
-                    if (actuallySubmitted)     return <span className="badge badge--pending">Submitted</span>;
-                    if (isDraft)               return <span className="badge" style={{ background: 'rgba(123,143,181,0.15)', color: 'var(--text-dim)' }}>In progress</span>;
-                    if (isClosed)              return <span className="badge" style={{ background: 'rgba(224,92,92,0.1)', color: 'var(--danger)' }}>Closed</span>;
+                    if (sub?.emailSent)    return <span className="badge badge--sent">Marked</span>;
+                    if (actuallySubmitted) return <span className="badge badge--pending">Submitted</span>;
+                    if (isDraft)           return <span className="badge" style={{ background: 'rgba(123,143,181,0.15)', color: 'var(--text-dim)' }}>In progress</span>;
                     return <span className="badge badge--pending">Open</span>;
                   })()}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth="2">
