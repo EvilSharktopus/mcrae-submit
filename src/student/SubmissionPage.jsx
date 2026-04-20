@@ -51,6 +51,10 @@ export default function SubmissionPage() {
   const [teacherReplies, setTeacherReplies] = useState([]);
 
   const editorRef         = useRef(null);
+  const keystrokesLog     = useRef([]);
+  const lastTrustedKey    = useRef(Date.now());
+  const anomalies         = useRef(new Set());
+  const velocityCheck     = useRef([]);
   const initialContentSet = useRef(false);
   const saveTimer         = useRef(null);
   const splitRef          = useRef(null);
@@ -195,11 +199,29 @@ export default function SubmissionPage() {
       const html  = editorRef.current.innerHTML;
       const plain = editorRef.current.innerText || '';
       const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
+      const logs = keystrokesLog.current;
+      let activeMS = 0;
+      for (let i = 1; i < logs.length; i++) {
+        const diff = logs[i] - logs[i - 1];
+        if (diff < 15000) activeMS += diff;
+      }
+      const activeMinutes = activeMS / 60000;
+      const wpm = activeMinutes > 0 ? Math.round(wc / activeMinutes) : 0;
+      
+      const integrityLog = {
+        keystrokes: logs.length,
+        activeTimeSeconds: Math.round(activeMS / 1000),
+        wpm,
+        anomalies: Array.from(anomalies.current),
+        log: logs
+      };
+
       try {
         await setDoc(docRef, {
           response:      html,
           plainResponse: plain.trim(),
           wordCount:     wc,
+          integrityLog,
           lastSaved:     serverTimestamp(),
         }, { merge: true });
         const now = new Date();
@@ -212,8 +234,39 @@ export default function SubmissionPage() {
     }, 5000);
   }, [assignmentId, user.email]);
 
+  const handleKeyDown = (e) => {
+    if (e.isTrusted) {
+      lastTrustedKey.current = Date.now();
+      keystrokesLog.current.push(lastTrustedKey.current);
+    }
+  };
+
   const handleInput = () => {
-    updateWordCount();
+    if (!editorRef.current) return;
+    const plain = editorRef.current.innerText || '';
+    const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
+    setWordCount(wc);
+
+    const now = Date.now();
+    
+    // Academic Integrity: Injection check (allow 1000ms grace period)
+    if (!isListening && now - lastTrustedKey.current > 1000) {
+      anomalies.current.add('Programmatic injection detected');
+    }
+
+    // Academic Integrity: Velocity check
+    velocityCheck.current.push({ wc, time: now });
+    // Keep only last ~3.5s of history to detect >50 words in 3s
+    while (velocityCheck.current.length > 0 && now - velocityCheck.current[0].time > 3500) {
+      velocityCheck.current.shift();
+    }
+    if (velocityCheck.current.length > 0) {
+      const oldest = velocityCheck.current[0];
+      if (wc - oldest.wc >= 50) {
+        anomalies.current.add('High velocity input (>50 words in 3s)');
+      }
+    }
+
     scheduleSave();
   };
 
@@ -311,12 +364,31 @@ export default function SubmissionPage() {
     const plain = editorRef.current.innerText || '';
     if (!plain.trim()) return;
     const wc = plain.trim().split(/\s+/).filter(Boolean).length;
+    
+    // Calculate integrity final
+    const logs = keystrokesLog.current;
+    let activeMS = 0;
+    for (let i = 1; i < logs.length; i++) {
+      const diff = logs[i] - logs[i - 1];
+      if (diff < 15000) activeMS += diff;
+    }
+    const activeMinutes = activeMS / 60000;
+    const wpm = activeMinutes > 0 ? Math.round(wc / activeMinutes) : 0;
+    const integrityLog = {
+      keystrokes: logs.length,
+      activeTimeSeconds: Math.round(activeMS / 1000),
+      wpm,
+      anomalies: Array.from(anomalies.current),
+      log: logs
+    };
+
     setSubmitting(true);
     try {
       await setDoc(docRef, {
         response:       html,
         plainResponse:  plain.trim(),
         wordCount:      wc,
+        integrityLog,
         lastSaved:      serverTimestamp(),
         submitted:      true,
         submittedAt:    serverTimestamp(),
@@ -556,6 +628,7 @@ export default function SubmissionPage() {
                   data-gramm="false"
                   data-gramm_editor="false"
                   data-enable-grammarly="false"
+                  onKeyDown={handleKeyDown}
                   onInput={handleInput}
                   onPaste={blockPaste}
                   onCopy={blockCopy}

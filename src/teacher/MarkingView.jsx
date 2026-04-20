@@ -242,7 +242,7 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
       <div className="marking-split">
         {/* Left — Student response */}
         <div className="marking-pane">
-          <div className="marking-pane__label" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="marking-pane__label" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             Student Response
             {subData.wordCount != null && (
               <span style={{ fontSize: 11, fontWeight: 600, background: 'rgba(123,143,181,0.2)', color: 'var(--accent)', padding: '2px 8px', borderRadius: 20 }}>
@@ -250,6 +250,17 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
               </span>
             )}
             {isDraft && <span style={{ fontSize: 11, color: '#c8952a', fontStyle: 'italic' }}>draft — may not be final</span>}
+            
+            {subData.integrityLog && (
+              <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                ⏱️ {Math.floor(subData.integrityLog.activeTimeSeconds / 60)}m {subData.integrityLog.activeTimeSeconds % 60}s active, {subData.integrityLog.wpm} WPM, {subData.integrityLog.keystrokes} keystrokes
+                {subData.integrityLog.anomalies?.length > 0 && (
+                  <span style={{ color: '#ffb9b9', background: 'rgba(255, 60, 60, 0.2)', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>
+                    ⚠️ {subData.integrityLog.anomalies.join(', ')}
+                  </span>
+                )}
+              </span>
+            )}
           </div>
           <div className="marking-response" dangerouslySetInnerHTML={{ __html: subData.response }} />
         </div>

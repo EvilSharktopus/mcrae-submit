@@ -213,6 +213,7 @@ export default function Dashboard() {
                         <div style={{ fontWeight: 600, fontSize: 14 }}>
                           {sub.studentName}
                           {sub.isResubmission && <span className="resubmission-badge" style={{ marginLeft: 6 }}>revision</span>}
+                          {sub.integrityLog?.anomalies?.length > 0 && <span style={{ marginLeft: 6, fontSize: '0.9em' }} title="Anomalies detected">⚠️</span>}
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{sub.studentEmail}</div>
                       </td>
