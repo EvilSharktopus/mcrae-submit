@@ -164,7 +164,7 @@ function RubricBuilder({ onSaved }) {
 // ── Assignment Registration ─────────────────────────────────────────────────
 
 function AssignmentForm({ rubrics, onSaved }) {
-  const [form, setForm] = useState({ name: '', course: 'Social 9', stream: '', docUrl: '', rubricId: '' });
+  const [form, setForm] = useState({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '' });
   const [saving, setSaving] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -174,7 +174,7 @@ function AssignmentForm({ rubrics, onSaved }) {
     setSaving(true);
     try {
       await addDoc(collection(db, 'assignments'), { ...form, name: form.name.trim(), docUrl: form.docUrl.trim() });
-      setForm({ name: '', course: 'Social 9', stream: '', docUrl: '', rubricId: '' });
+      setForm({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '' });
       onSaved?.();
     } finally { setSaving(false); }
   };
@@ -205,6 +205,15 @@ function AssignmentForm({ rubrics, onSaved }) {
           <select value={form.rubricId} onChange={e => set('rubricId', e.target.value)}>
             <option value="">— No rubric —</option>
             {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ gridColumn: '1 / -1' }}>
+          <label>Unit Page <span style={{ fontWeight: 400, color: 'var(--text-dim)' }}>(shows badge on mcraesocial.com)</span></label>
+          <select value={form.unit} onChange={e => { set('unit', e.target.value); }}>
+            <option value="">— No unit link —</option>
+            {(UNITS_FOR[form.course] || []).map(u => (
+              <option key={u.value} value={u.value}>{u.label}</option>
+            ))}
           </select>
         </div>
         <div className="field" style={{ gridColumn: '1 / -1' }}>
@@ -339,6 +348,44 @@ const STREAMS_FOR = {
   'Social 10': ['-1', '-2'],
   'Social 20': ['-1', '-2'],
   'Social 30': ['-1', '-2'],
+};
+const UNITS_FOR = {
+  'Social 9': [
+    { label: 'CCRF',                    value: 'social-9/ccrf' },
+    { label: 'Collective Rights',        value: 'social-9/collective-rights' },
+    { label: 'Consumerism',              value: 'social-9/consumerism' },
+    { label: 'Economics',               value: 'social-9/economics' },
+    { label: 'Federal Political Systems',value: 'social-9/federal-political-systems' },
+    { label: 'Immigration',             value: 'social-9/immigration' },
+    { label: 'Mock Election',           value: 'social-9/mock-election' },
+    { label: 'PAT Prep',               value: 'social-9/pat-prep' },
+    { label: 'Textbook',               value: 'social-9/textbook' },
+    { label: 'YCJA',                   value: 'social-9/ycja' },
+  ],
+  'Social 10': [
+    { label: 'Global Citizenship',      value: 'social-10/global-citizenship' },
+    { label: 'Historical Globalization',value: 'social-10/historical' },
+    { label: 'Identity',               value: 'social-10/identity' },
+    { label: 'Modern Globalization',   value: 'social-10/modern-globalization' },
+  ],
+  'Social 20': [
+    { label: 'Challenges to Canada',   value: 'social-20/challenges-to-canada' },
+    { label: 'Contending Loyalties',   value: 'social-20/contending-loyalties' },
+    { label: 'Create a Country',       value: 'social-20/create-a-country' },
+    { label: 'Factors of Nationalism', value: 'social-20/factors-of-nationalism' },
+    { label: 'Internationalism',       value: 'social-20/internationalism' },
+    { label: 'Model UN',               value: 'social-20/model-un' },
+    { label: 'National Interest',      value: 'social-20/national-interest' },
+    { label: 'Ultranationalism',       value: 'social-20/ultranationalism' },
+  ],
+  'Social 30': [
+    { label: 'Democracy',              value: 'social-30/democracy' },
+    { label: 'Dictatorships',          value: 'social-30/dictatorships' },
+    { label: 'Economics',              value: 'social-30/economics' },
+    { label: 'Illiberalism',           value: 'social-30/illiberalism' },
+    { label: 'Imposition',             value: 'social-30/imposition' },
+    { label: 'Intro to Ideologies',    value: 'social-30/intro-to-ideologies' },
+  ],
 };
 const selStyle = { fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)' };
 
