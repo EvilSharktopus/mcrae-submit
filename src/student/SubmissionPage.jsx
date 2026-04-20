@@ -3,7 +3,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import {
-  doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, addDoc,
+  doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, addDoc, query, where, onSnapshot
 } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../auth/ThemeContext';
