@@ -8,7 +8,12 @@ import {
 import '../styles/section.css';
 
 const COURSES = ['Social 9', 'Social 10', 'Social 20', 'Social 30'];
-const STREAMS = ['', '9', '10-1', '10-2', '20-1', '20-2', '30-1', '30-2'];
+const STREAMS_FOR_SECTION = {
+  'Social 9':  [],
+  'Social 10': ['10-1', '10-2'],
+  'Social 20': ['20-1', '20-2'],
+  'Social 30': ['30-1', '30-2'],
+};
 
 export default function SectionsPanel() {
   const [sections,    setSections]    = useState([]);
@@ -82,16 +87,22 @@ export default function SectionsPanel() {
       <form className="setup-grid" onSubmit={handleAddSection} style={{ gridTemplateColumns: '1fr 1fr 2fr auto', marginBottom: 24, alignItems: 'end' }}>
         <div className="field">
           <label>Course</label>
-          <select value={form.course} onChange={e => setForm(f => ({ ...f, course: e.target.value }))}>
+          <select value={form.course} onChange={e => {
+            const course = e.target.value;
+            setForm(f => ({ ...f, course, stream: '' }));
+          }}>
             {COURSES.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
-        <div className="field">
-          <label>Stream</label>
-          <select value={form.stream} onChange={e => setForm(f => ({ ...f, stream: e.target.value }))}>
-            {STREAMS.map(s => <option key={s} value={s}>{s || 'Any'}</option>)}
-          </select>
-        </div>
+        {(STREAMS_FOR_SECTION[form.course] || []).length > 0 && (
+          <div className="field">
+            <label>Stream</label>
+            <select value={form.stream} onChange={e => setForm(f => ({ ...f, stream: e.target.value }))}>
+              <option value="">— any —</option>
+              {(STREAMS_FOR_SECTION[form.course] || []).map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        )}
         <div className="field">
           <label>Section display name</label>
           <input

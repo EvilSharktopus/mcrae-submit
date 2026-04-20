@@ -195,10 +195,14 @@ function AssignmentForm({ rubrics, onSaved }) {
         </div>
         <div className="field">
           <label>Stream</label>
-          <select value={form.stream} onChange={e => set('stream', e.target.value)}>
-            <option value="">— no stream —</option>
-            {(STREAMS_FOR[form.course] || []).map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+          {(STREAMS_FOR[form.course] || []).length > 0 ? (
+            <select value={form.stream} onChange={e => set('stream', e.target.value)}>
+              <option value="">— no stream —</option>
+              {(STREAMS_FOR[form.course] || []).map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          ) : (
+            <input value="" disabled placeholder="No streams for this course" style={{ opacity: 0.5 }} />
+          )}
         </div>
         <div className="field">
           <label>Rubric</label>
@@ -344,7 +348,7 @@ function SavedRubrics({ rubrics, assignments, onAssignmentUpdate }) {
 
 const COURSES = ['Social 9', 'Social 10', 'Social 20', 'Social 30'];
 const STREAMS_FOR = {
-  'Social 9':  ['-1', '-2'],
+  'Social 9':  [],          // no streams — all together
   'Social 10': ['-1', '-2'],
   'Social 20': ['-1', '-2'],
   'Social 30': ['-1', '-2'],
