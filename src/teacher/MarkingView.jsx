@@ -23,7 +23,7 @@ function groupByLabel(descriptors) {
   return groups;
 }
 
-export default function MarkingView({ submission, assignment, rubric, onClose, nextStudent, onNextStudent }) {
+export default function MarkingView({ submission, assignment, rubric, onClose, prevStudent, onPrevStudent, nextStudent, onNextStudent }) {
   const [subData, setSubData] = useState(submission);
   const isDraft = subData.submitted === false ||
     (subData.submitted === undefined && !subData.response && !subData.plainResponse);
@@ -39,6 +39,15 @@ export default function MarkingView({ submission, assignment, rubric, onClose, n
   const totalMark = Object.values(selections).reduce((sum, s) => sum + (s?.points || 0), 0);
 
   const submissionDocId = subData.id || submission.id;
+
+  // ── Reset state on new submission ─────────────────────────────────────────
+  useEffect(() => {
+    setSubData(submission);
+    setFeedback(submission.feedback || '');
+    setSent(submission.emailSent || false);
+    setSaveStatus('');
+    setSelections({});
+  }, [submission.id]);
 
   // ── Auto-save feedback ────────────────────────────────────────────────────
   useEffect(() => {
@@ -212,6 +221,11 @@ export default function MarkingView({ submission, assignment, rubric, onClose, n
           {isDraft && (
             <button className="btn btn--secondary btn--sm" onClick={handleRefresh} disabled={refreshing}>
               {refreshing ? 'Refreshing…' : '↺ Refresh draft'}
+            </button>
+          )}
+          {prevStudent && (
+            <button className="btn btn--secondary btn--sm" onClick={onPrevStudent}>
+              ← Previous student
             </button>
           )}
           {nextStudent && (
