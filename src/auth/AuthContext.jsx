@@ -3,41 +3,47 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../firebase';
 import {
   onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile,
   signOut,
 } from 'firebase/auth';
 
 const TEACHER_EMAIL = import.meta.env.VITE_TEACHER_EMAIL;
+const ALLOWED_DOMAIN = 'rvschools.ab.ca';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(undefined); // undefined = loading
+  const [user, setUser] = useState(undefined);
   const [isTeacher, setIsTeacher] = useState(false);
 
   useEffect(() => {
-    // Handle redirect result after Google sign-in
-    getRedirectResult(auth).catch((err) => {
-      console.error('Redirect sign-in error:', err);
-    });
-
     return onAuthStateChanged(auth, (u) => {
       setUser(u);
       setIsTeacher(u?.email === TEACHER_EMAIL);
     });
   }, []);
 
-  const signIn = () => {
-    const provider = new GoogleAuthProvider();
-    signInWithRedirect(auth, provider);
+  const signIn = (email, password) =>
+    signInWithEmailAndPassword(auth, email, password);
+
+  const signUp = async (email, password, displayName) => {
+    if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+      throw new Error(`Please use your @${ALLOWED_DOMAIN} school email.`);
+    }
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    if (displayName) await updateProfile(cred.user, { displayName });
+    return cred;
   };
+
+  const resetPassword = (email) => sendPasswordResetEmail(auth, email);
 
   const signOutUser = () => signOut(auth);
 
   return (
-    <AuthContext.Provider value={{ user, isTeacher, signIn, signOut: signOutUser }}>
+    <AuthContext.Provider value={{ user, isTeacher, signIn, signUp, resetPassword, signOut: signOutUser }}>
       {children}
     </AuthContext.Provider>
   );
