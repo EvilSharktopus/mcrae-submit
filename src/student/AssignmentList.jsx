@@ -23,15 +23,20 @@ export default function AssignmentList({ section }) {
         let all = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
         // Filter to enrolled section + exclude archived assignments
+        // Normalize stream: "10-2" → "-2", "-2" → "-2" so both formats match
         if (section) {
-          all = all.filter(a =>
-            !a.archived &&
-            a.isOpen !== false &&
-            a.course === section.course &&
-            (!a.stream || !section.stream || a.stream === section.stream)
-          );
+          const norm = (s) => s ? (s.startsWith('-') ? s : s.replace(/^\d+/, '')) : '';
+          const sStream = norm(section.stream);
+          all = all.filter(a => {
+            const aStream = norm(a.stream);
+            return !a.archived &&
+              a.isOpen !== false &&
+              a.course === section.course &&
+              (!aStream || !sStream || aStream === sStream);
+          });
         }
         setAssignments(all);
+
 
         const subMap = {};
         sSnap.docs.forEach(d => { const s = d.data(); subMap[s.assignmentId] = s; });
