@@ -1,8 +1,8 @@
 // src/teacher/Setup.jsx
 import { useEffect, useState, useRef } from 'react';
-import { db, functions } from '../firebase';
+import { db } from '../firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
+import { GoogleGenAI } from '@google/genai';
 import { exportCSV, stripHtml, currentSchoolYear } from '../utils/exportUtils';
 import SectionsPanel from './SectionsPanel';
 import scrapedAssignments from '../data/scraped-assignments.json';
@@ -112,32 +112,44 @@ function RubricBuilder({ onSaved }) {
     if (!file) return;
     setExtracting(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async (rev) => {
-        try {
-          const base64Data = rev.target.result.split(',')[1];
-          const extractRubric = httpsCallable(functions, 'extractRubric');
-          const res = await extractRubric({ base64Data, mimeType: file.type });
-          const parsed = res.data;
-          
-          if (parsed && parsed.categories && parsed.categories.length > 0) {
-            setCategories(parsed.categories);
-            if (!name) setName(file.name.replace('.pdf', '').replace(/[-_]/g, ' '));
-          } else {
-             alert('Could not find rubric structure in the document.');
-          }
-        } catch (err) {
-          console.error('Extraction error:', err);
-          alert('Extraction failed: ' + err.message);
-        } finally {
-          setExtracting(false);
-          if (fileInputRef.current) fileInputRef.current.value = '';
-        }
-      };
-      reader.readAsDataURL(file);
+      const toBase64 = f => new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = ev => res(ev.target.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(f);
+      });
+      const base64Data = await toBase64(file);
+
+      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: [{
+          role: 'user',
+          parts: [
+            { inlineData: { data: base64Data, mimeType: file.type || 'application/pdf' } },
+            { text: `You are an expert educational assistant parsing marking rubrics.
+Read the provided document and extract the rubric categories and descriptors.
+Output ONLY valid JSON matching this schema (no markdown wrappers):
+{"categories":[{"name":"string","descriptors":[{"text":"string","points":number}]}]}` }
+          ]
+        }],
+      });
+
+      const raw = response.text.trim().replace(/^```json\s*/i, '').replace(/```$/,'');
+      const parsed = JSON.parse(raw);
+
+      if (parsed?.categories?.length > 0) {
+        setCategories(parsed.categories);
+        if (!name) setName(file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' '));
+      } else {
+        alert('Could not find rubric structure in the document.');
+      }
     } catch (err) {
-      console.error('File read error:', err);
+      console.error('Extraction error:', err);
+      alert('Extraction failed: ' + err.message);
+    } finally {
       setExtracting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
