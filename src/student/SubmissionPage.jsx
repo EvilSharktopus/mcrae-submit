@@ -45,9 +45,10 @@ export default function SubmissionPage() {
   // Ask Mr. McRae modal
   const [askModal,   setAskModal]   = useState(false);
   const [askType,    setAskType]    = useState('come');
-  const [askMessage, setAskMessage] = useState('');
-  const [askSending, setAskSending] = useState(false);
-  const [askSent,    setAskSent]    = useState(false);
+  const [askMessage,  setAskMessage]  = useState('');
+  const [askSending,  setAskSending]  = useState(false);
+  const [askSent,     setAskSent]     = useState(false);
+  const [teacherReplies, setTeacherReplies] = useState([]);
 
   const editorRef         = useRef(null);
   const initialContentSet = useRef(false);
@@ -133,6 +134,29 @@ export default function SubmissionPage() {
     }
     load();
   }, [assignmentId, user.email]);
+
+  // ── Listen for teacher replies ───────────────────────────────────────────
+  useEffect(() => {
+    if (!user || !assignmentId) return;
+    const q = query(
+      collection(db, 'help_requests'),
+      where('studentEmail', '==', user.email),
+      where('assignmentId', '==', assignmentId),
+      where('resolved', '==', true)
+    );
+    const unsub = onSnapshot(q, snap => {
+      const msgs = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(r => r.reply?.trim() && !r.dismissed)
+        .sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+      setTeacherReplies(msgs);
+    });
+    return () => unsub();
+  }, [user.email, assignmentId]);
+
+  const dismissReply = async (id) => {
+    try { await updateDoc(doc(db, 'help_requests', id), { dismissed: true }); } catch (err) {}
+  };
 
   // ── Populate editor once data is loaded ──────────────────────────────────
   useEffect(() => {
@@ -409,6 +433,35 @@ export default function SubmissionPage() {
         {/* Right — Work pane */}
         <div className={`split__pane split__pane--work ${mobileTab !== 'work' ? 'mobile-hidden' : ''}`}>
           <div className="work-pane">
+
+            {/* Teacher Replies */}
+            {teacherReplies.length > 0 && (
+              <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {teacherReplies.map(reply => (
+                  <div key={reply.id} style={{ 
+                    background: 'var(--bg-input)', border: '1px solid var(--primary)', 
+                    borderRadius: 8, padding: '12px 16px', position: 'relative'
+                  }}>
+                    <button 
+                      onClick={() => dismissReply(reply.id)} 
+                      style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 16 }}
+                      title="Dismiss"
+                    >×</button>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Coach McRae replied
+                    </div>
+                    {reply.message && (
+                      <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 6, fontStyle: 'italic' }}>
+                        "{reply.message}"
+                      </div>
+                    )}
+                    <div style={{ fontSize: 14, color: 'var(--text)' }}>
+                      {reply.reply}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Assignment closed */}
             {isClosed && !showSuccess && (
