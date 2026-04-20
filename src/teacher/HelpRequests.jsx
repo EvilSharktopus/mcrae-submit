@@ -11,11 +11,12 @@ export default function HelpRequests() {
   useEffect(() => {
     const q = query(
       collection(db, 'help_requests'),
-      where('resolved', '==', false),
-      orderBy('timestamp', 'desc')
+      where('resolved', '==', false)
     );
     const unsub = onSnapshot(q, snap => {
-      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      docs.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+      setRequests(docs);
       setLoading(false);
     });
     return () => unsub();
