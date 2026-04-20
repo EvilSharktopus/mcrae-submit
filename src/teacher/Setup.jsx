@@ -579,7 +579,7 @@ export default function Setup() {
       </div>
 
       {/* ── Export & Archive ── */}
-      <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div style={{ marginTop: 32 }}>
 
         {/* Global CSV Export */}
         <div className="setup-section card">
@@ -606,83 +606,29 @@ export default function Setup() {
           </button>
         </div>
 
-        {/* Archive School Year */}
-        <div className="setup-section card">
-          <h2 className="setup-section__title">Archive School Year</h2>
-          <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 8 }}>
-            Move all current submissions to a separate Firestore collection for the <strong>{currentSchoolYear().replace('_', '–')}</strong> school year.
-            The active dashboard will be cleared. All data is preserved.
-          </p>
-          <p style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 16 }}>
-            ⚠️ This cannot be undone from the UI.
-          </p>
-          <button className="btn btn--danger" onClick={archiveSchoolYear} disabled={archiving}>
-            {archiving ? 'Archiving…' : `Archive ${currentSchoolYear().replace('_', '–')} Submissions`}
-          </button>
-        </div>
-
       </div>
-
-      {/* ── Import Scraped Assignments ── */}
-      <ImportScrapedAssignments assignments={assignments} onDone={() => { load(); }} />
 
       {/* ── Sections & Rosters ── */}
       <div style={{ marginTop: 32 }}>
         <SectionsPanel />
       </div>
-    </div>
-  );
-}
 
-// ── Import from website scrape ──────────────────────────────────────────────
-function ImportScrapedAssignments({ assignments: existingAssignments, onDone }) {
-  const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState(null);
-
-  const handleImport = async () => {
-    if (!confirm(`Import ${scrapedAssignments.length} assignments scraped from mcraesocial.com?`)) return;
-    setImporting(true);
-    let created = 0, skipped = 0;
-    try {
-      for (const a of scrapedAssignments) {
-        // Duplicate check: same name + course + stream
-        const exists = existingAssignments.some(
-          e => e.name === a.name && e.course === a.course && e.stream === a.stream
-        );
-        if (exists) { skipped++; continue; }
-        await addDoc(collection(db, 'assignments'), {
-          name:     a.name,
-          course:   a.course,
-          stream:   a.stream,
-          docUrl:   a.docUrl || '',
-          isOpen:   false,
-          rubricId: null,
-        });
-        created++;
-      }
-      setResult({ created, skipped });
-      onDone?.();
-    } catch (err) {
-      console.error('Import error:', err);
-      alert('Import error — check console.');
-    } finally { setImporting(false); }
-  };
-
-  return (
-    <div className="setup-section card" style={{ marginTop: 32 }}>
-      <h2 className="setup-section__title">Import from Website</h2>
-      <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 12 }}>
-        Import {scrapedAssignments.length} assignments scraped from mcraesocial.com. Duplicates are skipped automatically.
-      </p>
-      {result ? (
-        <p style={{ fontSize: 13, color: 'var(--success)' }}>
-          ✓ Done — created {result.created}, skipped {result.skipped} duplicates.
+      {/* ── Archive School Year (bottom of page) ── */}
+      <div className="setup-section card" style={{ marginTop: 32 }}>
+        <h2 className="setup-section__title">Archive School Year</h2>
+        <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 8 }}>
+          Move all current submissions to a separate Firestore collection for the <strong>{currentSchoolYear().replace('_', '–')}</strong> school year.
+          The active dashboard will be cleared. All data is preserved.
         </p>
-      ) : (
-        <button className="btn btn--secondary" onClick={handleImport} disabled={importing}>
-          {importing ? 'Importing…' : `Import ${scrapedAssignments.length} Assignments`}
+        <p style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 16 }}>
+          ⚠️ This cannot be undone from the UI.
+        </p>
+        <button className="btn btn--danger" onClick={archiveSchoolYear} disabled={archiving}>
+          {archiving ? 'Archiving…' : `Archive ${currentSchoolYear().replace('_', '–')} Submissions`}
         </button>
-      )}
+      </div>
+
     </div>
   );
 }
+
