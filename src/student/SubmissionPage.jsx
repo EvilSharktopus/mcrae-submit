@@ -496,7 +496,7 @@ export default function SubmissionPage() {
                   className="editor-body"
                   contentEditable
                   suppressContentEditableWarning
-                  spellCheck="false"
+                  spellCheck="true"
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="off"
