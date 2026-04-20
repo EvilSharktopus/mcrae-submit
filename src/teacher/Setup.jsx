@@ -1,10 +1,11 @@
 // src/teacher/Setup.jsx
 import { useEffect, useState, useRef } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, writeBatch, query, where } from 'firebase/firestore';
 import { exportCSV, stripHtml, currentSchoolYear } from '../utils/exportUtils';
 import SectionsPanel from './SectionsPanel';
 import scrapedAssignments from '../data/scraped-assignments.json';
+import { useAuth } from '../auth/AuthContext';
 import '../styles/setup.css';
 
 // ── Rubric Presets ─────────────────────────────────────────────────────────
@@ -539,6 +540,7 @@ function SavedAssignments({ assignments, rubrics, onDelete, onUpdate }) {
 
 // ── Main Setup Page ─────────────────────────────────────────────────────────
 export default function Setup() {
+  const { user } = useAuth();
   const [rubrics,     setRubrics]     = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [loading,     setLoading]     = useState(true);
@@ -546,6 +548,11 @@ export default function Setup() {
   const [exporting,   setExporting]   = useState(false);
   const [exportCourse, setExportCourse] = useState('');
   const [exportStream, setExportStream] = useState('');
+  
+  const [simulating, setSimulating] = useState(false);
+  const [studentViewCourse, setStudentViewCourse] = useState('');
+  const [studentViewStream, setStudentViewStream] = useState('');
+
   const EXPORT_COURSES = ['', 'Social 9', 'Social 10', 'Social 20', 'Social 30'];
   const EXPORT_STREAMS = ['', '-1', '-2'];
 
@@ -584,6 +591,34 @@ export default function Setup() {
       console.error(err);
       alert('Error archiving. Check console.');
     } finally { setArchiving(false); }
+  }
+
+  async function simulateStudent() {
+    if (!studentViewCourse) { alert('Please select a course to simulate.'); return; }
+    setSimulating(true);
+    try {
+      // Delete existing enrollment
+      const snap = await getDocs(query(collection(db, 'enrollments'), where('studentEmail', '==', user.email)));
+      const batch = writeBatch(db);
+      snap.docs.forEach(d => batch.delete(d.ref));
+      
+      // Add new enrollment
+      batch.set(doc(collection(db, 'enrollments')), {
+        studentEmail: user.email,
+        studentName: 'Teacher (Simulation)',
+        displayName: `${studentViewCourse} ${studentViewStream}`.trim(),
+        course: studentViewCourse,
+        stream: studentViewStream || '',
+      });
+      
+      await batch.commit();
+      localStorage.setItem('studentView', 'true');
+      window.location.href = '/';
+    } catch (err) {
+      console.error(err);
+      alert('Error activating student view.');
+      setSimulating(false);
+    }
   }
 
   async function handleGlobalExport() {
@@ -688,19 +723,49 @@ export default function Setup() {
         </div>
       </div>
 
-      {/* ── Archive School Year (bottom) ── */}
-      <div className="setup-section card" style={{ marginTop: 32 }}>
-        <h2 className="setup-section__title">Archive School Year</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 8 }}>
-          Move all current submissions to a separate Firestore collection for the <strong>{currentSchoolYear().replace('_', '–')}</strong> school year.
-          The active dashboard will be cleared. All data is preserved.
-        </p>
-        <p style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 16 }}>
-          ⚠️ This cannot be undone from the UI.
-        </p>
-        <button className="btn btn--danger" onClick={archiveSchoolYear} disabled={archiving}>
-          {archiving ? 'Archiving…' : `Archive ${currentSchoolYear().replace('_', '–')} Submissions`}
-        </button>
+      {/* ── Bottom Actions (side by side) ── */}
+      <div className="setup-columns" style={{ marginTop: 32 }}>
+        
+        {/* Simulate Student View */}
+        <div className="setup-section card">
+          <h2 className="setup-section__title">Simulate Student View</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 16 }}>
+            Experience the submission portal exactly as a student would. You can submit assignments as a test student.
+          </p>
+          <div className="setup-grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 14 }}>
+            <div className="field">
+              <label>Course</label>
+              <select value={studentViewCourse} onChange={e => setStudentViewCourse(e.target.value)}>
+                {EXPORT_COURSES.map(c => <option key={c} value={c}>{c || 'Select course…'}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Stream</label>
+              <select value={studentViewStream} onChange={e => setStudentViewStream(e.target.value)}>
+                {EXPORT_STREAMS.map(s => <option key={s} value={s}>{s || '(None)'}</option>)}
+              </select>
+            </div>
+          </div>
+          <button className="btn btn--primary" onClick={simulateStudent} disabled={simulating}>
+            {simulating ? 'Activating…' : 'Activate Student View'}
+          </button>
+        </div>
+
+        {/* Archive School Year */}
+        <div className="setup-section card">
+          <h2 className="setup-section__title">Archive School Year</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 8 }}>
+            Move all current submissions to a separate Firestore collection for the <strong>{currentSchoolYear().replace('_', '–')}</strong> school year.
+            The dashboard will be cleared. Data is preserved.
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 16 }}>
+            ⚠️ This cannot be undone from the UI.
+          </p>
+          <button className="btn btn--danger" onClick={archiveSchoolYear} disabled={archiving}>
+            {archiving ? 'Archiving…' : `Archive ${currentSchoolYear().replace('_', '–')} Submissions`}
+          </button>
+        </div>
+        
       </div>
 
     </div>
