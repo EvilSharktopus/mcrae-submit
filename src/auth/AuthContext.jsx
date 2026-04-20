@@ -3,17 +3,20 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../firebase';
 import {
   onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile,
   signOut,
 } from 'firebase/auth';
 
 const TEACHER_EMAIL = import.meta.env.VITE_TEACHER_EMAIL;
+const ALLOWED_DOMAIN = 'rvschools.ab.ca';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(undefined); // undefined = loading
+  const [user, setUser] = useState(undefined);
   const [isTeacher, setIsTeacher] = useState(false);
 
   useEffect(() => {
@@ -23,21 +26,24 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  const signIn = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (err) {
-      if (err.code !== 'auth/popup-closed-by-user') {
-        console.error('Sign-in error:', err);
-      }
+  const signIn = (email, password) =>
+    signInWithEmailAndPassword(auth, email, password);
+
+  const signUp = async (email, password, displayName) => {
+    if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+      throw new Error(`Please use your @${ALLOWED_DOMAIN} school email.`);
     }
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    if (displayName) await updateProfile(cred.user, { displayName });
+    return cred;
   };
+
+  const resetPassword = (email) => sendPasswordResetEmail(auth, email);
 
   const signOutUser = () => signOut(auth);
 
   return (
-    <AuthContext.Provider value={{ user, isTeacher, signIn, signOut: signOutUser }}>
+    <AuthContext.Provider value={{ user, isTeacher, signIn, signUp, resetPassword, signOut: signOutUser }}>
       {children}
     </AuthContext.Provider>
   );
