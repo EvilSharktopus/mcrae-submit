@@ -496,6 +496,13 @@ export default function SubmissionPage() {
                   className="editor-body"
                   contentEditable
                   suppressContentEditableWarning
+                  spellCheck="false"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  data-gramm="false"
+                  data-gramm_editor="false"
+                  data-enable-grammarly="false"
                   onInput={handleInput}
                   onPaste={blockPaste}
                   onCopy={blockCopy}
