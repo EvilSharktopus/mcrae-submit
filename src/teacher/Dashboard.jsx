@@ -161,6 +161,18 @@ export default function Dashboard() {
           </label>
           <button
             className="btn btn--secondary btn--sm"
+            onClick={async (e) => {
+              const btn = e.target;
+              const original = btn.innerText;
+              btn.innerText = '↻ Refreshing...';
+              await loadData();
+              btn.innerText = original;
+            }}
+          >
+            ↻ Refresh
+          </button>
+          <button
+            className="btn btn--secondary btn--sm"
             onClick={() => handleExport(selectedAssignment, assignmentSubs)}
           >
             ↓ Export CSV
