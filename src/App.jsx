@@ -17,7 +17,8 @@ function AppRoutes() {
   if (!user) return <LoginPage />;
 
   // Signed in — route by role
-  if (isTeacher) return <TeacherApp />;
+  const isStudentView = localStorage.getItem('studentView') === 'true';
+  if (isTeacher && !isStudentView) return <TeacherApp />;
   return <StudentApp />;
 }
 

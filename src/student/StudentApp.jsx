@@ -10,7 +10,7 @@ import SectionPicker  from './SectionPicker';
 import '../styles/globals.css';
 
 export default function StudentApp() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isTeacher } = useAuth();
   const [enrollment,  setEnrollment]  = useState(undefined); // undefined = loading
   const [showPicker,  setShowPicker]  = useState(false);
 
@@ -65,7 +65,16 @@ export default function StudentApp() {
               Change class
             </button>
           )}
-          <button className="app-nav__signout" onClick={signOut}>Sign out</button>
+          {isTeacher ? (
+            <button className="app-nav__signout" style={{ color: '#ffb9b9', fontWeight: 'bold' }} onClick={() => {
+              localStorage.removeItem('studentView');
+              window.location.href = '/';
+            }}>
+              Exit Student View
+            </button>
+          ) : (
+            <button className="app-nav__signout" onClick={signOut}>Sign out</button>
+          )}
         </div>
       </nav>
 

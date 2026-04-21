@@ -6,22 +6,34 @@ import { collection, query, where, orderBy, onSnapshot, doc, updateDoc } from 'f
 export default function HelpRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [replies, setReplies] = useState({});
 
   useEffect(() => {
     const q = query(
       collection(db, 'help_requests'),
-      where('resolved', '==', false),
-      orderBy('timestamp', 'desc')
+      where('resolved', '==', false)
     );
     const unsub = onSnapshot(q, snap => {
-      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      docs.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+      setRequests(docs);
       setLoading(false);
+      // Update tab title with unread count
+      const count = docs.length;
+      document.title = count > 0 ? `(${count}) Help Requests — McRae Submit` : 'McRae Submit';
     });
-    return () => unsub();
+    return () => {
+      unsub();
+      document.title = 'McRae Submit'; // reset on unmount
+    };
   }, []);
 
-  const resolve = async (id) => {
-    await updateDoc(doc(db, 'help_requests', id), { resolved: true });
+  const resolve = async (id, reply = '') => {
+    await updateDoc(doc(db, 'help_requests', id), { 
+      resolved: true, 
+      ...(reply.trim() ? { reply: reply.trim() } : {}) 
+    });
+    setReplies(p => { const next = {...p}; delete next[id]; return next; });
   };
 
   if (loading) return <div className="loading-screen"><span className="spinner" /></div>;
@@ -69,9 +81,25 @@ export default function HelpRequests() {
                     {r.message}
                   </div>
                 )}
+                {r.type === 'answer' && (
+                  <textarea
+                    style={{
+                      width: '100%', marginTop: 8, padding: '8px 10px', fontSize: 13,
+                      borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-card)',
+                      color: 'var(--text)', fontFamily: 'inherit', resize: 'vertical', minHeight: 60
+                    }}
+                    placeholder="Type your answer here..."
+                    value={replies[r.id] || ''}
+                    onChange={e => setReplies(p => ({ ...p, [r.id]: e.target.value }))}
+                  />
+                )}
               </div>
-              <button className="btn btn--success btn--sm" onClick={() => resolve(r.id)} style={{ flexShrink: 0 }}>
-                Resolve ✓
+              <button 
+                className="btn btn--success btn--sm" 
+                onClick={() => resolve(r.id, replies[r.id])} 
+                style={{ flexShrink: 0, marginTop: r.type === 'answer' ? 24 : 0 }}
+              >
+                {(replies[r.id] || '').trim() ? 'Send & Resolve ✓' : 'Resolve ✓'}
               </button>
             </div>
           ))}

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { db, functions } from '../firebase';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
+import DOMPurify from 'dompurify';
 import '../styles/marking.css';
 
 // Group descriptors by their label field (E, Pf, S, L, P, INS)
@@ -23,7 +24,7 @@ function groupByLabel(descriptors) {
   return groups;
 }
 
-export default function MarkingView({ submission, assignment, rubric, onClose, nextStudent, onNextStudent }) {
+export default function MarkingView({ submission, assignment, rubric, onClose, prevStudent, onPrevStudent, nextStudent, onNextStudent }) {
   const [subData, setSubData] = useState(submission);
   const isDraft = subData.submitted === false ||
     (subData.submitted === undefined && !subData.response && !subData.plainResponse);
@@ -34,11 +35,25 @@ export default function MarkingView({ submission, assignment, rubric, onClose, n
   const [sent,        setSent]        = useState(subData.emailSent || false);
   const [saveStatus,  setSaveStatus]  = useState('');
   const [refreshing,  setRefreshing]  = useState(false);
+  const [aiLoading,   setAiLoading]   = useState(false);
+  const [aiUsed,      setAiUsed]      = useState(false);
+  const [anomaliesDismissed, setAnomaliesDismissed] = useState(false);
   const autoSaveTimer = useRef(null);
 
   const totalMark = Object.values(selections).reduce((sum, s) => sum + (s?.points || 0), 0);
 
   const submissionDocId = subData.id || submission.id;
+
+  // ── Reset state on new submission ─────────────────────────────────────────
+  useEffect(() => {
+    setSubData(submission);
+    setFeedback(submission.feedback || '');
+    setSent(submission.emailSent || false);
+    setSaveStatus('');
+    setSelections({});
+    setAiUsed(false);
+    setAnomaliesDismissed(false);
+  }, [submission.id]);
 
   // ── Auto-save feedback ────────────────────────────────────────────────────
   useEffect(() => {
@@ -137,6 +152,50 @@ export default function MarkingView({ submission, assignment, rubric, onClose, n
     } finally { setRefreshing(false); }
   };
 
+  // ── Dismiss anomalies locally ─────────────────────────────────────────────
+  const handleClearAnomalies = async () => {
+    setAnomaliesDismissed(true);
+  };
+
+  // ── AI Draft marking ──────────────────────────────────────────────────────
+  const handleAiDraft = async () => {
+    if (!rubric || !subData.plainResponse?.trim()) return;
+    setAiLoading(true);
+    try {
+      const getAiMark = httpsCallable(functions, 'getAiMark');
+      const result = await getAiMark({
+        submissionId: submissionDocId,
+        assignmentId: assignment.id,
+      });
+      const aiData = result.data;
+
+      // Map AI selections to the same format the rubric buttons use
+      if (aiData.selections && rubric.categories) {
+        const newSelections = {};
+        rubric.categories.forEach((cat, catIdx) => {
+          const descIdx = aiData.selections[String(catIdx)];
+          if (descIdx != null && cat.descriptors?.[descIdx]) {
+            const d = cat.descriptors[descIdx];
+            newSelections[catIdx] = {
+              descriptorIndex: descIdx,
+              points: d.points,
+              label: d.label || '',
+              text: d.text || '',
+            };
+          }
+        });
+        setSelections(newSelections);
+      }
+      if (aiData.feedback) setFeedback(aiData.feedback);
+      setAiUsed(true);
+    } catch (err) {
+      console.error('AI Draft error:', err);
+      alert('AI Draft failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   // ── Rubric render helper ──────────────────────────────────────────────────
   const renderRubricCategory = (cat, catIdx) => {
     const groups = groupByLabel(cat.descriptors || []);
@@ -214,11 +273,32 @@ export default function MarkingView({ submission, assignment, rubric, onClose, n
               {refreshing ? 'Refreshing…' : '↺ Refresh draft'}
             </button>
           )}
+          {prevStudent && (
+            <button className="btn btn--secondary btn--sm" onClick={onPrevStudent}>
+              ← Previous student
+            </button>
+          )}
           {nextStudent && (
             <button className="btn btn--secondary btn--sm" onClick={onNextStudent}>
               Next student →
             </button>
           )}
+          {rubric && !sent && (
+            <button
+              className="btn btn--secondary btn--sm"
+              onClick={handleAiDraft}
+              disabled={aiLoading || !subData.plainResponse?.trim()}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+              title="Get an AI-generated first pass on this submission"
+            >
+              {aiLoading ? (
+                <><span className="spinner" style={{ width: 14, height: 14 }} /> Thinking…</>
+              ) : (
+                <>✦ AI Draft</>
+              )}
+            </button>
+          )}
+          {aiUsed && <span style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>AI Draft applied</span>}
           <button className="btn btn--success" onClick={handleSendMark} disabled={sending || sent}>
             {sent ? '✓ Sent' : sending ? 'Sending…' : 'Send Mark'}
           </button>
@@ -228,7 +308,7 @@ export default function MarkingView({ submission, assignment, rubric, onClose, n
       <div className="marking-split">
         {/* Left — Student response */}
         <div className="marking-pane">
-          <div className="marking-pane__label" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="marking-pane__label" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             Student Response
             {subData.wordCount != null && (
               <span style={{ fontSize: 11, fontWeight: 600, background: 'rgba(123,143,181,0.2)', color: 'var(--accent)', padding: '2px 8px', borderRadius: 20 }}>
@@ -236,8 +316,26 @@ export default function MarkingView({ submission, assignment, rubric, onClose, n
               </span>
             )}
             {isDraft && <span style={{ fontSize: 11, color: '#c8952a', fontStyle: 'italic' }}>draft — may not be final</span>}
+            
+            {subData.integrityLog && (
+              <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                ⏱️ {Math.floor(subData.integrityLog.activeTimeSeconds / 60)}m {subData.integrityLog.activeTimeSeconds % 60}s active, {subData.integrityLog.wpm} WPM, {subData.integrityLog.keystrokes} keystrokes
+                {subData.integrityLog.anomalies?.length > 0 && !anomaliesDismissed && (
+                  <span style={{ color: '#ffb9b9', background: 'rgba(255, 60, 60, 0.2)', padding: '2px 6px', borderRadius: 4, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    ⚠️ {subData.integrityLog.anomalies.join(', ')}
+                    <button 
+                      onClick={handleClearAnomalies}
+                      title="Dismiss anomaly flags"
+                      style={{ background: 'none', border: 'none', color: '#ffb9b9', padding: 2, cursor: 'pointer', fontSize: 10, opacity: 0.8 }}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                )}
+              </span>
+            )}
           </div>
-          <div className="marking-response" dangerouslySetInnerHTML={{ __html: subData.response }} />
+          <div className="marking-response" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(subData.response) }} />
         </div>
 
         {/* Right — Rubric + feedback */}

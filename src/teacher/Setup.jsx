@@ -1,10 +1,11 @@
 // src/teacher/Setup.jsx
 import { useEffect, useState, useRef } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, writeBatch, query, where } from 'firebase/firestore';
 import { exportCSV, stripHtml, currentSchoolYear } from '../utils/exportUtils';
 import SectionsPanel from './SectionsPanel';
 import scrapedAssignments from '../data/scraped-assignments.json';
+import { useAuth } from '../auth/AuthContext';
 import '../styles/setup.css';
 
 // ── Rubric Presets ─────────────────────────────────────────────────────────
@@ -164,7 +165,7 @@ function RubricBuilder({ onSaved }) {
 // ── Assignment Registration ─────────────────────────────────────────────────
 
 function AssignmentForm({ rubrics, onSaved }) {
-  const [form, setForm] = useState({ name: '', course: 'Social 9', stream: '', docUrl: '', rubricId: '' });
+  const [form, setForm] = useState({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '' });
   const [saving, setSaving] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -174,7 +175,7 @@ function AssignmentForm({ rubrics, onSaved }) {
     setSaving(true);
     try {
       await addDoc(collection(db, 'assignments'), { ...form, name: form.name.trim(), docUrl: form.docUrl.trim() });
-      setForm({ name: '', course: 'Social 9', stream: '', docUrl: '', rubricId: '' });
+      setForm({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '' });
       onSaved?.();
     } finally { setSaving(false); }
   };
@@ -195,16 +196,29 @@ function AssignmentForm({ rubrics, onSaved }) {
         </div>
         <div className="field">
           <label>Stream</label>
-          <select value={form.stream} onChange={e => set('stream', e.target.value)}>
-            <option value="">— no stream —</option>
-            {(STREAMS_FOR[form.course] || []).map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+          {(STREAMS_FOR[form.course] || []).length > 0 ? (
+            <select value={form.stream} onChange={e => set('stream', e.target.value)}>
+              <option value="">— no stream —</option>
+              {(STREAMS_FOR[form.course] || []).map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          ) : (
+            <input value="" disabled placeholder="No streams for this course" style={{ opacity: 0.5 }} />
+          )}
         </div>
         <div className="field">
           <label>Rubric</label>
           <select value={form.rubricId} onChange={e => set('rubricId', e.target.value)}>
             <option value="">— No rubric —</option>
             {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ gridColumn: '1 / -1' }}>
+          <label>Unit Page <span style={{ fontWeight: 400, color: 'var(--text-dim)' }}>(shows badge on mcraesocial.com)</span></label>
+          <select value={form.unit} onChange={e => { set('unit', e.target.value); }}>
+            <option value="">— No unit link —</option>
+            {(UNITS_FOR[form.course] || []).map(u => (
+              <option key={u.value} value={u.value}>{u.label}</option>
+            ))}
           </select>
         </div>
         <div className="field" style={{ gridColumn: '1 / -1' }}>
@@ -335,10 +349,48 @@ function SavedRubrics({ rubrics, assignments, onAssignmentUpdate }) {
 
 const COURSES = ['Social 9', 'Social 10', 'Social 20', 'Social 30'];
 const STREAMS_FOR = {
-  'Social 9':  ['-1', '-2'],
+  'Social 9':  [],          // no streams — all together
   'Social 10': ['-1', '-2'],
   'Social 20': ['-1', '-2'],
   'Social 30': ['-1', '-2'],
+};
+const UNITS_FOR = {
+  'Social 9': [
+    { label: 'CCRF',                    value: 'social-9/ccrf' },
+    { label: 'Collective Rights',        value: 'social-9/collective-rights' },
+    { label: 'Consumerism',              value: 'social-9/consumerism' },
+    { label: 'Economics',               value: 'social-9/economics' },
+    { label: 'Federal Political Systems',value: 'social-9/federal-political-systems' },
+    { label: 'Immigration',             value: 'social-9/immigration' },
+    { label: 'Mock Election',           value: 'social-9/mock-election' },
+    { label: 'PAT Prep',               value: 'social-9/pat-prep' },
+    { label: 'Textbook',               value: 'social-9/textbook' },
+    { label: 'YCJA',                   value: 'social-9/ycja' },
+  ],
+  'Social 10': [
+    { label: 'Global Citizenship',      value: 'social-10/global-citizenship' },
+    { label: 'Historical Globalization',value: 'social-10/historical' },
+    { label: 'Identity',               value: 'social-10/identity' },
+    { label: 'Modern Globalization',   value: 'social-10/modern-globalization' },
+  ],
+  'Social 20': [
+    { label: 'Challenges to Canada',   value: 'social-20/challenges-to-canada' },
+    { label: 'Contending Loyalties',   value: 'social-20/contending-loyalties' },
+    { label: 'Create a Country',       value: 'social-20/create-a-country' },
+    { label: 'Factors of Nationalism', value: 'social-20/factors-of-nationalism' },
+    { label: 'Internationalism',       value: 'social-20/internationalism' },
+    { label: 'Model UN',               value: 'social-20/model-un' },
+    { label: 'National Interest',      value: 'social-20/national-interest' },
+    { label: 'Ultranationalism',       value: 'social-20/ultranationalism' },
+  ],
+  'Social 30': [
+    { label: 'Democracy',              value: 'social-30/democracy' },
+    { label: 'Dictatorships',          value: 'social-30/dictatorships' },
+    { label: 'Economics',              value: 'social-30/economics' },
+    { label: 'Illiberalism',           value: 'social-30/illiberalism' },
+    { label: 'Imposition',             value: 'social-30/imposition' },
+    { label: 'Intro to Ideologies',    value: 'social-30/intro-to-ideologies' },
+  ],
 };
 const selStyle = { fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)' };
 
@@ -397,6 +449,23 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
         }}>
           <option value="">— No rubric —</option>
           {rubrics.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+        </select>
+
+        {/* Unit page picker */}
+        <select
+          style={{ ...selStyle, minWidth: 160 }}
+          value={a.unit || ''}
+          title="Unit page on mcraesocial.com"
+          onChange={async e => {
+            const unit = e.target.value;
+            await updateDoc(doc(db, 'assignments', a.id), { unit: unit || '' });
+            onUpdate?.(a.id, { unit });
+          }}
+        >
+          <option value="">— No unit link —</option>
+          {(UNITS_FOR[a.course] || []).map(u => (
+            <option key={u.value} value={u.value}>{u.label}</option>
+          ))}
         </select>
 
         <button className="btn btn--secondary btn--sm" onClick={() => setCopyOpen(o => !o)}>
@@ -471,6 +540,7 @@ function SavedAssignments({ assignments, rubrics, onDelete, onUpdate }) {
 
 // ── Main Setup Page ─────────────────────────────────────────────────────────
 export default function Setup() {
+  const { user } = useAuth();
   const [rubrics,     setRubrics]     = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [loading,     setLoading]     = useState(true);
@@ -478,6 +548,11 @@ export default function Setup() {
   const [exporting,   setExporting]   = useState(false);
   const [exportCourse, setExportCourse] = useState('');
   const [exportStream, setExportStream] = useState('');
+  
+  const [simulating, setSimulating] = useState(false);
+  const [studentViewCourse, setStudentViewCourse] = useState('');
+  const [studentViewStream, setStudentViewStream] = useState('');
+
   const EXPORT_COURSES = ['', 'Social 9', 'Social 10', 'Social 20', 'Social 30'];
   const EXPORT_STREAMS = ['', '-1', '-2'];
 
@@ -516,6 +591,34 @@ export default function Setup() {
       console.error(err);
       alert('Error archiving. Check console.');
     } finally { setArchiving(false); }
+  }
+
+  async function simulateStudent() {
+    if (!studentViewCourse) { alert('Please select a course to simulate.'); return; }
+    setSimulating(true);
+    try {
+      // Delete existing enrollment
+      const snap = await getDocs(query(collection(db, 'enrollments'), where('studentEmail', '==', user.email)));
+      const batch = writeBatch(db);
+      snap.docs.forEach(d => batch.delete(d.ref));
+      
+      // Add new enrollment
+      batch.set(doc(collection(db, 'enrollments')), {
+        studentEmail: user.email,
+        studentName: 'Teacher (Simulation)',
+        displayName: `${studentViewCourse} ${studentViewStream}`.trim(),
+        course: studentViewCourse,
+        stream: studentViewStream || '',
+      });
+      
+      await batch.commit();
+      localStorage.setItem('studentView', 'true');
+      window.location.href = '/';
+    } catch (err) {
+      console.error(err);
+      alert('Error activating student view.');
+      setSimulating(false);
+    }
   }
 
   async function handleGlobalExport() {
@@ -558,30 +661,14 @@ export default function Setup() {
   return (
     <div className="page">
       <h1 className="page-title">Setup</h1>
-      <div className="setup-columns">
-        <div>
-          <RubricBuilder onSaved={load} />
-          <SavedRubrics
-            rubrics={rubrics}
-            assignments={assignments}
-            onAssignmentUpdate={(id, changes) => setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a))}
-          />
-        </div>
-        <div>
-          <AssignmentForm rubrics={rubrics} onSaved={load} />
-          <SavedAssignments
-            assignments={assignments.filter(a => !a.archived)}
-            rubrics={rubrics}
-            onDelete={load}
-            onUpdate={(id, changes) => setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a))}
-          />
-        </div>
+
+      {/* ── Sections & Rosters ── */}
+      <div style={{ marginTop: 8 }}>
+        <SectionsPanel />
       </div>
 
-      {/* ── Export & Archive ── */}
-      <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-
-        {/* Global CSV Export */}
+      {/* ── Export Grades ── */}
+      <div style={{ marginTop: 32 }}>
         <div className="setup-section card">
           <h2 className="setup-section__title">Export Grades</h2>
           <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 16 }}>
@@ -605,13 +692,71 @@ export default function Setup() {
             {exporting ? 'Exporting…' : '↓ Export CSV'}
           </button>
         </div>
+      </div>
+
+      {/* ── Add Rubric / Register Assignment (side by side) ── */}
+      <div className="setup-columns" style={{ marginTop: 32 }}>
+        <div>
+          <RubricBuilder onSaved={load} />
+        </div>
+        <div>
+          <AssignmentForm rubrics={rubrics} onSaved={load} />
+        </div>
+      </div>
+
+      {/* ── Saved Rubrics / Registered Assignments (side by side) ── */}
+      <div className="setup-columns" style={{ marginTop: 32 }}>
+        <div>
+          <SavedRubrics
+            rubrics={rubrics}
+            assignments={assignments}
+            onAssignmentUpdate={(id, changes) => setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a))}
+          />
+        </div>
+        <div>
+          <SavedAssignments
+            assignments={assignments.filter(a => !a.archived)}
+            rubrics={rubrics}
+            onDelete={load}
+            onUpdate={(id, changes) => setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a))}
+          />
+        </div>
+      </div>
+
+      {/* ── Bottom Actions (side by side) ── */}
+      <div className="setup-columns" style={{ marginTop: 32 }}>
+        
+        {/* Simulate Student View */}
+        <div className="setup-section card">
+          <h2 className="setup-section__title">Simulate Student View</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 16 }}>
+            Experience the submission portal exactly as a student would. You can submit assignments as a test student.
+          </p>
+          <div className="setup-grid" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: 14 }}>
+            <div className="field">
+              <label>Course</label>
+              <select value={studentViewCourse} onChange={e => setStudentViewCourse(e.target.value)}>
+                {EXPORT_COURSES.map(c => <option key={c} value={c}>{c || 'Select course…'}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Stream</label>
+              <select value={studentViewStream} onChange={e => setStudentViewStream(e.target.value)}>
+                {EXPORT_STREAMS.map(s => <option key={s} value={s}>{s || '(None)'}</option>)}
+              </select>
+            </div>
+          </div>
+          <button className="btn btn--primary" onClick={simulateStudent} disabled={simulating}>
+            {simulating ? 'Activating…' : 'Activate Student View'}
+          </button>
+        </div>
 
         {/* Archive School Year */}
         <div className="setup-section card">
           <h2 className="setup-section__title">Archive School Year</h2>
           <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 8 }}>
             Move all current submissions to a separate Firestore collection for the <strong>{currentSchoolYear().replace('_', '–')}</strong> school year.
-            The active dashboard will be cleared. All data is preserved.
+            The dashboard will be cleared. Data is preserved.
           </p>
           <p style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 16 }}>
             ⚠️ This cannot be undone from the UI.
@@ -620,69 +765,10 @@ export default function Setup() {
             {archiving ? 'Archiving…' : `Archive ${currentSchoolYear().replace('_', '–')} Submissions`}
           </button>
         </div>
-
+        
       </div>
 
-      {/* ── Import Scraped Assignments ── */}
-      <ImportScrapedAssignments assignments={assignments} onDone={() => { load(); }} />
-
-      {/* ── Sections & Rosters ── */}
-      <div style={{ marginTop: 32 }}>
-        <SectionsPanel />
-      </div>
     </div>
   );
 }
 
-// ── Import from website scrape ──────────────────────────────────────────────
-function ImportScrapedAssignments({ assignments: existingAssignments, onDone }) {
-  const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState(null);
-
-  const handleImport = async () => {
-    if (!confirm(`Import ${scrapedAssignments.length} assignments scraped from mcraesocial.com?`)) return;
-    setImporting(true);
-    let created = 0, skipped = 0;
-    try {
-      for (const a of scrapedAssignments) {
-        // Duplicate check: same name + course + stream
-        const exists = existingAssignments.some(
-          e => e.name === a.name && e.course === a.course && e.stream === a.stream
-        );
-        if (exists) { skipped++; continue; }
-        await addDoc(collection(db, 'assignments'), {
-          name:     a.name,
-          course:   a.course,
-          stream:   a.stream,
-          docUrl:   a.docUrl || '',
-          isOpen:   false,
-          rubricId: null,
-        });
-        created++;
-      }
-      setResult({ created, skipped });
-      onDone?.();
-    } catch (err) {
-      console.error('Import error:', err);
-      alert('Import error — check console.');
-    } finally { setImporting(false); }
-  };
-
-  return (
-    <div className="setup-section card" style={{ marginTop: 32 }}>
-      <h2 className="setup-section__title">Import from Website</h2>
-      <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 12 }}>
-        Import {scrapedAssignments.length} assignments scraped from mcraesocial.com. Duplicates are skipped automatically.
-      </p>
-      {result ? (
-        <p style={{ fontSize: 13, color: 'var(--success)' }}>
-          ✓ Done — created {result.created}, skipped {result.skipped} duplicates.
-        </p>
-      ) : (
-        <button className="btn btn--secondary" onClick={handleImport} disabled={importing}>
-          {importing ? 'Importing…' : `Import ${scrapedAssignments.length} Assignments`}
-        </button>
-      )}
-    </div>
-  );
-}

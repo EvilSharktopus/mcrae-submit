@@ -3,10 +3,11 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import {
-  doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, addDoc,
+  doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, addDoc, query, where, onSnapshot
 } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../auth/ThemeContext';
+import DOMPurify from 'dompurify';
 import '../styles/submission.css';
 
 // Convert a Google Docs URL to the /preview embed URL
@@ -45,17 +46,25 @@ export default function SubmissionPage() {
   // Ask Mr. McRae modal
   const [askModal,   setAskModal]   = useState(false);
   const [askType,    setAskType]    = useState('come');
-  const [askMessage, setAskMessage] = useState('');
-  const [askSending, setAskSending] = useState(false);
-  const [askSent,    setAskSent]    = useState(false);
+  const [askMessage,  setAskMessage]  = useState('');
+  const [askSending,  setAskSending]  = useState(false);
+  const [askSent,     setAskSent]     = useState(false);
+  const [activeRequest, setActiveRequest] = useState(null);
+  const [teacherReplies, setTeacherReplies] = useState([]);
 
   const editorRef         = useRef(null);
+  const keystrokesLog     = useRef([]);
+  const lastTrustedKey    = useRef(Date.now());
+  const anomalies         = useRef(new Set());
+  const velocityCheck     = useRef([]);
   const initialContentSet = useRef(false);
   const saveTimer         = useRef(null);
   const splitRef          = useRef(null);
   const isDraggingRef     = useRef(false);
-  const [splitPct,     setSplitPct]     = useState(40);   // left pane %
-  const [isDragging,   setIsDragging]   = useState(false); // overlay blocker
+  const [splitPct,     setSplitPct]     = useState(40);
+  const [isDragging,   setIsDragging]   = useState(false);
+  const [isListening,  setIsListening]  = useState(false);
+  const recognitionRef = useRef(null);
   const docRef            = doc(db, 'submissions', `${assignmentId}__${user.email}`);
 
   // ── Drag-to-resize split ───────────────────────────────────────
@@ -91,19 +100,20 @@ export default function SubmissionPage() {
 
   // ── Load assignment + existing draft ─────────────────────────────────────
   useEffect(() => {
+    let unsubAssign;
     async function load() {
       try {
-        const [aDoc, subSnap] = await Promise.all([
-          getDoc(doc(db, 'assignments', assignmentId)),
-          getDoc(docRef),
-        ]);
-        if (!aDoc.exists()) { navigate('/'); return; }
-        setAssignment({ id: aDoc.id, ...aDoc.data() });
+        const subSnap = await getDoc(docRef);
+
+        unsubAssign = onSnapshot(doc(db, 'assignments', assignmentId), aDoc => {
+          if (!aDoc.exists()) { navigate('/'); return; }
+          setAssignment({ id: aDoc.id, ...aDoc.data() });
+          setLoading(false); // only render once assignment data is here
+        });
 
         if (subSnap.exists()) {
           setDraftData(subSnap.data());
         } else {
-          // Create the draft doc immediately on first open
           const initial = {
             assignmentId,
             studentName:    user.displayName,
@@ -125,12 +135,39 @@ export default function SubmissionPage() {
         }
       } catch (err) {
         console.error('SubmissionPage load error:', err);
-      } finally {
         setLoading(false);
       }
     }
     load();
+    return () => { if (unsubAssign) unsubAssign(); };
   }, [assignmentId, user.email]);
+
+  // ── Listen for teacher replies & active requests ─────────────────────────
+  useEffect(() => {
+    if (!user || !assignmentId) return;
+    const q = query(
+      collection(db, 'help_requests'),
+      where('studentEmail', '==', user.email)
+    );
+    const unsub = onSnapshot(q, snap => {
+      const all = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(r => r.assignmentId === assignmentId); // filter client-side
+      setActiveRequest(all.find(r => !r.resolved) || null);
+      
+      const msgs = all
+        .filter(r => r.resolved && r.reply?.trim() && !r.dismissed)
+        .sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+      setTeacherReplies(msgs);
+    }, err => {
+      console.error('Error listening to help requests:', err);
+    });
+    return () => unsub();
+  }, [user.email, assignmentId]);
+
+  const dismissReply = async (id) => {
+    try { await updateDoc(doc(db, 'help_requests', id), { dismissed: true }); } catch (err) {}
+  };
 
   // ── Populate editor once data is loaded ──────────────────────────────────
   useEffect(() => {
@@ -169,11 +206,29 @@ export default function SubmissionPage() {
       const html  = editorRef.current.innerHTML;
       const plain = editorRef.current.innerText || '';
       const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
+      const logs = keystrokesLog.current;
+      let activeMS = 0;
+      for (let i = 1; i < logs.length; i++) {
+        const diff = logs[i] - logs[i - 1];
+        if (diff < 15000) activeMS += diff;
+      }
+      const activeMinutes = activeMS / 60000;
+      const wpm = activeMinutes > 0 ? Math.round(wc / activeMinutes) : 0;
+      
+      const integrityLog = {
+        keystrokes: logs.length,
+        activeTimeSeconds: Math.round(activeMS / 1000),
+        wpm,
+        anomalies: Array.from(anomalies.current),
+        log: logs
+      };
+
       try {
         await setDoc(docRef, {
           response:      html,
           plainResponse: plain.trim(),
           wordCount:     wc,
+          integrityLog,
           lastSaved:     serverTimestamp(),
         }, { merge: true });
         const now = new Date();
@@ -186,8 +241,48 @@ export default function SubmissionPage() {
     }, 5000);
   }, [assignmentId, user.email]);
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      document.execCommand('insertHTML', false, '\u00a0\u00a0\u00a0\u00a0');
+    }
+    if (e.isTrusted) {
+      lastTrustedKey.current = Date.now();
+      keystrokesLog.current.push(lastTrustedKey.current);
+    }
+  };
+
   const handleInput = () => {
-    updateWordCount();
+    if (!editorRef.current) return;
+    const plain = editorRef.current.innerText || '';
+    const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
+    
+    const previousWc = wordCount;
+    const wordDelta = wc - previousWc;
+    
+    setWordCount(wc);
+
+    const now = Date.now();
+    
+    // Academic Integrity: Injection check (allow 1000ms grace period)
+    // Ignore small word deltas to allow for native spellcheck/autocorrect replacements
+    if (!isListening && now - lastTrustedKey.current > 1000 && wordDelta > 3) {
+      anomalies.current.add('Programmatic injection detected');
+    }
+
+    // Academic Integrity: Velocity check
+    velocityCheck.current.push({ wc, time: now });
+    // Keep only last ~3.5s of history to detect >50 words in 3s
+    while (velocityCheck.current.length > 0 && now - velocityCheck.current[0].time > 3500) {
+      velocityCheck.current.shift();
+    }
+    if (velocityCheck.current.length > 0) {
+      const oldest = velocityCheck.current[0];
+      if (wc - oldest.wc >= 50) {
+        anomalies.current.add('High velocity input (>50 words in 3s)');
+      }
+    }
+
     scheduleSave();
   };
 
@@ -197,24 +292,86 @@ export default function SubmissionPage() {
     if (!el) return;
     const stopPaste = (e) => { e.preventDefault(); e.stopImmediatePropagation(); };
     const stopDrop  = (e) => { e.preventDefault(); e.stopImmediatePropagation(); };
-    const stopCtx   = (e) => e.preventDefault();
+    const stopCopy  = (e) => { e.preventDefault(); e.stopImmediatePropagation(); };
     el.addEventListener('paste',       stopPaste, { capture: true });
     el.addEventListener('drop',        stopDrop,  { capture: true });
-    el.addEventListener('contextmenu', stopCtx,   { capture: true });
+    el.addEventListener('copy',        stopCopy,  { capture: true });
+    el.addEventListener('cut',         stopCopy,  { capture: true });
     return () => {
       el.removeEventListener('paste',       stopPaste, { capture: true });
       el.removeEventListener('drop',        stopDrop,  { capture: true });
-      el.removeEventListener('contextmenu', stopCtx,   { capture: true });
+      el.removeEventListener('copy',        stopCopy,  { capture: true });
+      el.removeEventListener('cut',         stopCopy,  { capture: true });
     };
   }, [loading]);
 
   const blockPaste = (e) => { e.preventDefault(); e.stopPropagation(); };
   const blockCopy  = (e) => { e.preventDefault(); e.stopPropagation(); };
 
-  // ── Rich text commands ────────────────────────────────────────────────────
   const execCmd = (cmd, value = null) => {
     document.execCommand(cmd, false, value);
     editorRef.current?.focus();
+  };
+
+  // ── Speech-to-text ───────────────────────────────────────────────────────
+  const toggleListening = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert('Speech recognition is not supported in this browser. Try Chrome or Edge.'); return; }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const rec = new SR();
+    rec.lang = 'en-CA';
+    rec.continuous = true;
+    rec.interimResults = false;
+
+    rec.onresult = (e) => {
+      const transcript = Array.from(e.results)
+        .slice(e.resultIndex)
+        .filter(r => r.isFinal)
+        .map(r => r[0].transcript)
+        .join(' ');
+      if (!transcript) return;
+
+      // Insert at current cursor position in the editor
+      const editor = editorRef.current;
+      if (!editor) return;
+      editor.focus();
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        // Add a space before if cursor isn't at start
+        const text = document.createTextNode(
+          (range.startOffset > 0 ? ' ' : '') + transcript
+        );
+        range.insertNode(text);
+        range.setStartAfter(text);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        // Fallback: append to end
+        document.execCommand('insertText', false, ' ' + transcript);
+      }
+      handleInput();
+    };
+
+    rec.onerror = (e) => {
+      if (e.error !== 'aborted') console.error('Speech error:', e.error);
+    };
+
+    rec.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognitionRef.current = rec;
+    rec.start();
+    setIsListening(true);
   };
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -225,12 +382,31 @@ export default function SubmissionPage() {
     const plain = editorRef.current.innerText || '';
     if (!plain.trim()) return;
     const wc = plain.trim().split(/\s+/).filter(Boolean).length;
+    
+    // Calculate integrity final
+    const logs = keystrokesLog.current;
+    let activeMS = 0;
+    for (let i = 1; i < logs.length; i++) {
+      const diff = logs[i] - logs[i - 1];
+      if (diff < 15000) activeMS += diff;
+    }
+    const activeMinutes = activeMS / 60000;
+    const wpm = activeMinutes > 0 ? Math.round(wc / activeMinutes) : 0;
+    const integrityLog = {
+      keystrokes: logs.length,
+      activeTimeSeconds: Math.round(activeMS / 1000),
+      wpm,
+      anomalies: Array.from(anomalies.current),
+      log: logs
+    };
+
     setSubmitting(true);
     try {
       await setDoc(docRef, {
         response:       html,
         plainResponse:  plain.trim(),
         wordCount:      wc,
+        integrityLog,
         lastSaved:      serverTimestamp(),
         submitted:      true,
         submittedAt:    serverTimestamp(),
@@ -348,6 +524,35 @@ export default function SubmissionPage() {
         <div className={`split__pane split__pane--work ${mobileTab !== 'work' ? 'mobile-hidden' : ''}`}>
           <div className="work-pane">
 
+            {/* Teacher Replies */}
+            {teacherReplies.length > 0 && (
+              <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {teacherReplies.map(reply => (
+                  <div key={reply.id} style={{ 
+                    background: 'var(--bg-input)', border: '1px solid var(--primary)', 
+                    borderRadius: 8, padding: '12px 16px', position: 'relative'
+                  }}>
+                    <button 
+                      onClick={() => dismissReply(reply.id)} 
+                      style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: 16 }}
+                      title="Dismiss"
+                    >×</button>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Mr. McRae replied
+                    </div>
+                    {reply.message && (
+                      <div style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 6, fontStyle: 'italic' }}>
+                        "{reply.message}"
+                      </div>
+                    )}
+                    <div style={{ fontSize: 14, color: 'var(--text)' }}>
+                      {reply.reply}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Assignment closed */}
             {isClosed && !showSuccess && (
               <div className="submission-success">
@@ -367,7 +572,7 @@ export default function SubmissionPage() {
                   <div className="feedback-box">
                     <div className="feedback-box__label">Feedback</div>
                     {draftData.mark != null && <div className="feedback-box__mark">Mark: <strong>{draftData.mark}</strong></div>}
-                    <div className="feedback-box__text" dangerouslySetInnerHTML={{ __html: draftData.feedback }} />
+                    <div className="feedback-box__text" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(draftData.feedback) }} />
                   </div>
                 )}
                 
@@ -378,7 +583,7 @@ export default function SubmissionPage() {
                     <div 
                       className="editor-body" 
                       style={{ minHeight: 'auto', maxHeight: '50vh', overflowY: 'auto', padding: '16px 20px', background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'default' }} 
-                      dangerouslySetInnerHTML={{ __html: draftData.response || draftData.plainResponse }} 
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(draftData.response || draftData.plainResponse) }} 
                     />
                   </div>
                 )}
@@ -417,6 +622,28 @@ export default function SubmissionPage() {
                   <div className="editor-toolbar__divider" />
                   <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('undo'); }} title="Undo">↩</button>
                   <button className="editor-toolbar__btn" onMouseDown={e => { e.preventDefault(); execCmd('redo'); }} title="Redo">↪</button>
+                  <div className="editor-toolbar__divider" />
+                  <button
+                    className={`editor-toolbar__btn ${isListening ? 'editor-toolbar__btn--mic-active' : ''}`}
+                    onMouseDown={e => { e.preventDefault(); toggleListening(); }}
+                    title={isListening ? 'Stop dictating' : 'Dictate (speech to text)'}
+                    style={{ minWidth: 36 }}
+                  >
+                    {isListening ? '🔴' : '🎤'}
+                  </button>
+
+                  <div className="editor-toolbar__divider" />
+                  <button
+                    className="editor-toolbar__btn"
+                    style={{ fontSize: 11, color: 'var(--text-dim)' }}
+                    onMouseDown={e => {
+                      e.preventDefault();
+                      alert("Spellcheck not working?\n\nBecause this editor blocks external extensions like Grammarly to maintain academic integrity, you must use your computer's built-in spellcheck.\n\n• On Chrome: Go to Settings -> Languages -> Spell check and turn it ON.\n• On Mac (Safari): Go to System Settings -> Keyboard -> Text Input and turn 'Correct spelling automatically' ON.");
+                    }}
+                    title="How to fix spellcheck"
+                  >
+                    ❓ Spellcheck broken?
+                  </button>
                 </div>
 
                 {/* Editable area */}
@@ -425,6 +652,14 @@ export default function SubmissionPage() {
                   className="editor-body"
                   contentEditable
                   suppressContentEditableWarning
+                  spellCheck="true"
+                  autoComplete="off"
+                  autoCorrect="on"
+                  autoCapitalize="on"
+                  data-gramm="false"
+                  data-gramm_editor="false"
+                  data-enable-grammarly="false"
+                  onKeyDown={handleKeyDown}
                   onInput={handleInput}
                   onPaste={blockPaste}
                   onCopy={blockCopy}
@@ -478,6 +713,15 @@ export default function SubmissionPage() {
               <div className="modal-sent">
                 <div className="modal-sent__icon">✓</div>
                 <p>Mr. McRae has been notified!</p>
+              </div>
+            ) : activeRequest ? (
+              <div className="modal-sent">
+                <div className="modal-sent__icon" style={{ background: '#fef3c7', color: '#d97706' }}>🕒</div>
+                <h3 style={{ margin: '16px 0 8px' }}>Hold tight!</h3>
+                <p>Mr. McRae has received your request and will get to you soon.</p>
+                <div className="modal-footer" style={{ marginTop: 24, justifyContent: 'center' }}>
+                  <button className="btn btn--secondary btn--sm" onClick={() => setAskModal(false)}>Close</button>
+                </div>
               </div>
             ) : (
               <>

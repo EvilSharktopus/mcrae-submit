@@ -107,20 +107,32 @@ export default function Dashboard() {
 
   if (loading) return <div className="loading-screen"><span className="spinner" /></div>;
 
+  // ── Compute current assignment students list ──────────────────────────────
+  const isSubmitted = s => s.submitted === true || (!('submitted' in s) && (s.response || s.plainResponse));
+  
+  const assignmentSubs = selectedAssignment
+    ? submissions
+        .filter(s => s.assignmentId === selectedAssignment.id)
+        .sort((a, b) => (a.lastSaved?.seconds || a.timestamp?.seconds || 0) - (b.lastSaved?.seconds || b.timestamp?.seconds || 0))
+    : [];
+
+  const students = unmarkedOnly
+    ? assignmentSubs.filter(s => isSubmitted(s) && !s.emailSent)
+    : assignmentSubs;
+
   // ── Marking view ────────────────────────────────────────────────────────────
   if (view === 'marking' && selectedSubmission) {
-    // Build ordered student list for "next student" nav
-    const assignmentSubs = submissions
-      .filter(s => s.assignmentId === selectedAssignment.id)
-      .sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
-    const currentIdx = assignmentSubs.findIndex(s => s.id === selectedSubmission.id);
-    const nextSub    = assignmentSubs.find((s, i) => i > currentIdx && !s.emailSent) || null;
+    const currentIdx = students.findIndex(s => s.id === selectedSubmission.id);
+    const prevSub    = currentIdx > 0 ? students[currentIdx - 1] : null;
+    const nextSub    = currentIdx >= 0 && currentIdx < students.length - 1 ? students[currentIdx + 1] : null;
 
     return (
       <MarkingView
         submission={selectedSubmission}
         assignment={selectedAssignment}
         rubric={rubrics.find(r => r.id === selectedAssignment?.rubricId)}
+        prevStudent={prevSub}
+        onPrevStudent={() => setSelectedSubmission(prevSub)}
         nextStudent={nextSub}
         onNextStudent={() => setSelectedSubmission(nextSub)}
         onClose={() => { setView('detail'); loadData(); }}
@@ -130,17 +142,6 @@ export default function Dashboard() {
 
   // ── Detail view (one assignment) ─────────────────────────────────────────────
   if (view === 'detail' && selectedAssignment) {
-    // All docs for this assignment (drafts + submitted). Deterministic IDs: {aId}__{email}
-    const assignmentSubs = submissions
-      .filter(s => s.assignmentId === selectedAssignment.id)
-      .sort((a, b) => (a.lastSaved?.seconds || a.timestamp?.seconds || 0) - (b.lastSaved?.seconds || b.timestamp?.seconds || 0));
-
-    // A doc is "submitted" if submitted===true OR if the field is absent (old model compat)
-    const isSubmitted = s => s.submitted === true || (!('submitted' in s) && (s.response || s.plainResponse));
-
-    const students = unmarkedOnly
-      ? assignmentSubs.filter(s => isSubmitted(s) && !s.emailSent)
-      : assignmentSubs;
 
     const accessedCount  = assignmentSubs.length;
     const submittedCount = assignmentSubs.filter(isSubmitted).length;
@@ -159,6 +160,18 @@ export default function Dashboard() {
             <input type="checkbox" checked={unmarkedOnly} onChange={e => setUnmarkedOnly(e.target.checked)} />
             Unmarked only
           </label>
+          <button
+            className="btn btn--secondary btn--sm"
+            onClick={async (e) => {
+              const btn = e.target;
+              const original = btn.innerText;
+              btn.innerText = '↻ Refreshing...';
+              await loadData();
+              btn.innerText = original;
+            }}
+          >
+            ↻ Refresh
+          </button>
           <button
             className="btn btn--secondary btn--sm"
             onClick={() => handleExport(selectedAssignment, assignmentSubs)}
@@ -200,6 +213,7 @@ export default function Dashboard() {
                         <div style={{ fontWeight: 600, fontSize: 14 }}>
                           {sub.studentName}
                           {sub.isResubmission && <span className="resubmission-badge" style={{ marginLeft: 6 }}>revision</span>}
+                          {sub.integrityLog?.anomalies?.length > 0 && <span style={{ marginLeft: 6, fontSize: '0.9em' }} title="Anomalies detected">⚠️</span>}
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>{sub.studentEmail}</div>
                       </td>
