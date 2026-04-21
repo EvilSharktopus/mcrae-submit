@@ -631,6 +631,19 @@ export default function SubmissionPage() {
                   >
                     {isListening ? '🔴' : '🎤'}
                   </button>
+
+                  <div className="editor-toolbar__divider" />
+                  <button
+                    className="editor-toolbar__btn"
+                    style={{ fontSize: 11, color: 'var(--text-dim)' }}
+                    onMouseDown={e => {
+                      e.preventDefault();
+                      alert("Spellcheck not working?\n\nBecause this editor blocks external extensions like Grammarly to maintain academic integrity, you must use your computer's built-in spellcheck.\n\n• On Chrome: Go to Settings -> Languages -> Spell check and turn it ON.\n• On Mac (Safari): Go to System Settings -> Keyboard -> Text Input and turn 'Correct spelling automatically' ON.");
+                    }}
+                    title="How to fix spellcheck"
+                  >
+                    ❓ Spellcheck broken?
+                  </button>
                 </div>
 
                 {/* Editable area */}
