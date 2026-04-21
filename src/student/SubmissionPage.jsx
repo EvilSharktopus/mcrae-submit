@@ -242,6 +242,10 @@ export default function SubmissionPage() {
   }, [assignmentId, user.email]);
 
   const handleKeyDown = (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      document.execCommand('insertHTML', false, '\u00a0\u00a0\u00a0\u00a0');
+    }
     if (e.isTrusted) {
       lastTrustedKey.current = Date.now();
       keystrokesLog.current.push(lastTrustedKey.current);

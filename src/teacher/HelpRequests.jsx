@@ -18,8 +18,14 @@ export default function HelpRequests() {
       docs.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
       setRequests(docs);
       setLoading(false);
+      // Update tab title with unread count
+      const count = docs.length;
+      document.title = count > 0 ? `(${count}) Help Requests — McRae Submit` : 'McRae Submit';
     });
-    return () => unsub();
+    return () => {
+      unsub();
+      document.title = 'McRae Submit'; // reset on unmount
+    };
   }, []);
 
   const resolve = async (id, reply = '') => {
