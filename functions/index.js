@@ -1,5 +1,6 @@
 // functions/index.js
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 const { GoogleGenAI } = require('@google/genai');
@@ -165,4 +166,110 @@ exports.sendMark = onCall({ secrets: [RESEND_API_KEY] }, async (request) => {
   });
 
   return { success: true };
+});
+
+// ── Auto-close assignments at 3:30 PM Mountain Time (Mon–Fri) ───────────────
+exports.autoCloseAssignments = onSchedule(
+  {
+    schedule: '30 21 * * 1-5', // 21:30 UTC = 3:30 PM Mountain (MDT, UTC-6)
+    timeZone: 'America/Edmonton',
+  },
+  async () => {
+    const db = admin.firestore();
+    const snap = await db
+      .collection('assignments')
+      .where('closed', '==', false)
+      .get();
+
+    if (snap.empty) {
+      console.log('autoCloseAssignments: no open assignments to close.');
+      return;
+    }
+
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.update(d.ref, { closed: true }));
+    await batch.commit();
+
+    console.log(`autoCloseAssignments: closed ${snap.size} assignment(s) at 3:30 PM Mountain.`);
+  }
+);
+
+// ── AI Draft Marking ────────────────────────────────────────────────────────
+exports.getAiMark = onCall({ secrets: [GEMINI_API_KEY], timeoutSeconds: 120 }, async (request) => {
+  const callerEmail = request.auth?.token?.email;
+  if (callerEmail !== TEACHER_EMAIL) {
+    throw new HttpsError('permission-denied', 'Only the teacher can use AI marking.');
+  }
+
+  const { submissionId, assignmentId } = request.data;
+  if (!submissionId || !assignmentId) {
+    throw new HttpsError('invalid-argument', 'Missing submissionId or assignmentId.');
+  }
+
+  const db = admin.firestore();
+
+  // Get submission
+  const subSnap = await db.collection('submissions').doc(submissionId).get();
+  if (!subSnap.exists) throw new HttpsError('not-found', 'Submission not found.');
+  const sub = subSnap.data();
+  const essayText = sub.plainResponse || '';
+  if (!essayText.trim()) throw new HttpsError('failed-precondition', 'No essay text to mark.');
+
+  // Get assignment to find rubricId
+  const assignSnap = await db.collection('assignments').doc(assignmentId).get();
+  if (!assignSnap.exists) throw new HttpsError('not-found', 'Assignment not found.');
+  const assign = assignSnap.data();
+  const rubricId = assign.rubricId;
+  if (!rubricId) throw new HttpsError('failed-precondition', 'No rubric attached to this assignment.');
+
+  // Get rubric
+  const rubricSnap = await db.collection('rubrics').doc(rubricId).get();
+  if (!rubricSnap.exists) throw new HttpsError('not-found', 'Rubric not found.');
+  const rubric = rubricSnap.data();
+
+  // Build rubric description for prompt
+  const rubricDesc = rubric.categories.map((cat, ci) => {
+    const descList = (cat.descriptors || []).map((d, di) =>
+      `  Descriptor ${di}: ${d.points} pts${d.label ? ` [${d.label}]` : ''} — "${d.text || 'No description'}"`
+    ).join('\n');
+    return `Category ${ci}: "${cat.name}"\n${descList}`;
+  }).join('\n\n');
+
+  const prompt = `You are an experienced Social Studies teacher marking a student essay.
+
+RUBRIC:
+${rubricDesc}
+
+STUDENT ESSAY:
+${essayText}
+
+INSTRUCTIONS:
+1. Read the essay carefully.
+2. For each rubric category, select the single best-matching descriptor index (0-based integer).
+3. Write 2-4 sentences of specific, constructive feedback referencing what the student did well and what could improve.
+4. Return ONLY valid JSON matching this exact schema:
+{
+  "selections": {
+    "0": <descriptor index for category 0>,
+    "1": <descriptor index for category 1>,
+    ...
+  },
+  "feedback": "<string>"
+}
+Be fair but rigorous. Match the quality of the writing to the descriptor that best fits.`;
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY.value() });
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: { responseMimeType: 'application/json' }
+    });
+
+    const result = JSON.parse(response.text);
+    return result;
+  } catch (err) {
+    console.error('AI Marking Error:', err);
+    throw new HttpsError('internal', 'AI marking failed.', err.message);
+  }
 });

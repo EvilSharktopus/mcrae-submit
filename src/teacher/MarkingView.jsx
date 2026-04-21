@@ -35,6 +35,8 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
   const [sent,        setSent]        = useState(subData.emailSent || false);
   const [saveStatus,  setSaveStatus]  = useState('');
   const [refreshing,  setRefreshing]  = useState(false);
+  const [aiLoading,   setAiLoading]   = useState(false);
+  const [aiUsed,      setAiUsed]      = useState(false);
   const autoSaveTimer = useRef(null);
 
   const totalMark = Object.values(selections).reduce((sum, s) => sum + (s?.points || 0), 0);
@@ -48,6 +50,7 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
     setSent(submission.emailSent || false);
     setSaveStatus('');
     setSelections({});
+    setAiUsed(false);
   }, [submission.id]);
 
   // ── Auto-save feedback ────────────────────────────────────────────────────
@@ -147,6 +150,45 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
     } finally { setRefreshing(false); }
   };
 
+  // ── AI Draft marking ──────────────────────────────────────────────────────
+  const handleAiDraft = async () => {
+    if (!rubric || !subData.plainResponse?.trim()) return;
+    setAiLoading(true);
+    try {
+      const getAiMark = httpsCallable(functions, 'getAiMark');
+      const result = await getAiMark({
+        submissionId: submissionDocId,
+        assignmentId: assignment.id,
+      });
+      const aiData = result.data;
+
+      // Map AI selections to the same format the rubric buttons use
+      if (aiData.selections && rubric.categories) {
+        const newSelections = {};
+        rubric.categories.forEach((cat, catIdx) => {
+          const descIdx = aiData.selections[String(catIdx)];
+          if (descIdx != null && cat.descriptors?.[descIdx]) {
+            const d = cat.descriptors[descIdx];
+            newSelections[catIdx] = {
+              descriptorIndex: descIdx,
+              points: d.points,
+              label: d.label || '',
+              text: d.text || '',
+            };
+          }
+        });
+        setSelections(newSelections);
+      }
+      if (aiData.feedback) setFeedback(aiData.feedback);
+      setAiUsed(true);
+    } catch (err) {
+      console.error('AI Draft error:', err);
+      alert('AI Draft failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   // ── Rubric render helper ──────────────────────────────────────────────────
   const renderRubricCategory = (cat, catIdx) => {
     const groups = groupByLabel(cat.descriptors || []);
@@ -234,6 +276,22 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
               Next student →
             </button>
           )}
+          {rubric && !sent && (
+            <button
+              className="btn btn--secondary btn--sm"
+              onClick={handleAiDraft}
+              disabled={aiLoading || !subData.plainResponse?.trim()}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+              title="Get an AI-generated first pass on this submission"
+            >
+              {aiLoading ? (
+                <><span className="spinner" style={{ width: 14, height: 14 }} /> Thinking…</>
+              ) : (
+                <>✦ AI Draft</>
+              )}
+            </button>
+          )}
+          {aiUsed && <span style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>AI Draft applied</span>}
           <button className="btn btn--success" onClick={handleSendMark} disabled={sending || sent}>
             {sent ? '✓ Sent' : sending ? 'Sending…' : 'Send Mark'}
           </button>
