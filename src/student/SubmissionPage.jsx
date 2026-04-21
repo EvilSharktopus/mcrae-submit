@@ -287,11 +287,16 @@ export default function SubmissionPage() {
     if (!el) return;
     const stopPaste = (e) => { e.preventDefault(); e.stopImmediatePropagation(); };
     const stopDrop  = (e) => { e.preventDefault(); e.stopImmediatePropagation(); };
+    const stopCopy  = (e) => { e.preventDefault(); e.stopImmediatePropagation(); };
     el.addEventListener('paste',       stopPaste, { capture: true });
     el.addEventListener('drop',        stopDrop,  { capture: true });
+    el.addEventListener('copy',        stopCopy,  { capture: true });
+    el.addEventListener('cut',         stopCopy,  { capture: true });
     return () => {
       el.removeEventListener('paste',       stopPaste, { capture: true });
       el.removeEventListener('drop',        stopDrop,  { capture: true });
+      el.removeEventListener('copy',        stopCopy,  { capture: true });
+      el.removeEventListener('cut',         stopCopy,  { capture: true });
     };
   }, [loading]);
 
