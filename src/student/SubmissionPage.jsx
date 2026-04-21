@@ -256,12 +256,17 @@ export default function SubmissionPage() {
     if (!editorRef.current) return;
     const plain = editorRef.current.innerText || '';
     const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
+    
+    const previousWc = wordCount;
+    const wordDelta = wc - previousWc;
+    
     setWordCount(wc);
 
     const now = Date.now();
     
     // Academic Integrity: Injection check (allow 1000ms grace period)
-    if (!isListening && now - lastTrustedKey.current > 1000) {
+    // Ignore small word deltas to allow for native spellcheck/autocorrect replacements
+    if (!isListening && now - lastTrustedKey.current > 1000 && wordDelta > 3) {
       anomalies.current.add('Programmatic injection detected');
     }
 
