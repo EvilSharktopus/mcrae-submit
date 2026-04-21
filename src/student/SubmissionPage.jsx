@@ -108,12 +108,12 @@ export default function SubmissionPage() {
         unsubAssign = onSnapshot(doc(db, 'assignments', assignmentId), aDoc => {
           if (!aDoc.exists()) { navigate('/'); return; }
           setAssignment({ id: aDoc.id, ...aDoc.data() });
+          setLoading(false); // only render once assignment data is here
         });
 
         if (subSnap.exists()) {
           setDraftData(subSnap.data());
         } else {
-          // Create the draft doc immediately on first open
           const initial = {
             assignmentId,
             studentName:    user.displayName,
@@ -135,7 +135,6 @@ export default function SubmissionPage() {
         }
       } catch (err) {
         console.error('SubmissionPage load error:', err);
-      } finally {
         setLoading(false);
       }
     }
