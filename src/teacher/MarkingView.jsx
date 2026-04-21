@@ -150,6 +150,23 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
     } finally { setRefreshing(false); }
   };
 
+  // ── Clear anomalies ───────────────────────────────────────────────────────
+  const handleClearAnomalies = async () => {
+    if (!window.confirm("Clear all anomaly flags for this submission?")) return;
+    try {
+      await updateDoc(doc(db, 'submissions', submissionDocId), {
+        'integrityLog.anomalies': []
+      });
+      setSubData(prev => ({
+        ...prev,
+        integrityLog: { ...prev.integrityLog, anomalies: [] }
+      }));
+    } catch (err) {
+      console.error('Failed to clear anomalies:', err);
+      alert('Failed to clear anomalies');
+    }
+  };
+
   // ── AI Draft marking ──────────────────────────────────────────────────────
   const handleAiDraft = async () => {
     if (!rubric || !subData.plainResponse?.trim()) return;
@@ -314,8 +331,15 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
               <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
                 ⏱️ {Math.floor(subData.integrityLog.activeTimeSeconds / 60)}m {subData.integrityLog.activeTimeSeconds % 60}s active, {subData.integrityLog.wpm} WPM, {subData.integrityLog.keystrokes} keystrokes
                 {subData.integrityLog.anomalies?.length > 0 && (
-                  <span style={{ color: '#ffb9b9', background: 'rgba(255, 60, 60, 0.2)', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>
+                  <span style={{ color: '#ffb9b9', background: 'rgba(255, 60, 60, 0.2)', padding: '2px 6px', borderRadius: 4, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
                     ⚠️ {subData.integrityLog.anomalies.join(', ')}
+                    <button 
+                      onClick={handleClearAnomalies}
+                      title="Clear anomaly flags"
+                      style={{ background: 'none', border: 'none', color: '#ffb9b9', padding: 2, cursor: 'pointer', fontSize: 10, opacity: 0.8 }}
+                    >
+                      ✕
+                    </button>
                   </span>
                 )}
               </span>
