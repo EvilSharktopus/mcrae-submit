@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { db, functions } from '../firebase';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
+import DOMPurify from 'dompurify';
 import '../styles/marking.css';
 
 // Group descriptors by their label field (E, Pf, S, L, P, INS)
@@ -262,7 +263,7 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
               </span>
             )}
           </div>
-          <div className="marking-response" dangerouslySetInnerHTML={{ __html: subData.response }} />
+          <div className="marking-response" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(subData.response) }} />
         </div>
 
         {/* Right — Rubric + feedback */}

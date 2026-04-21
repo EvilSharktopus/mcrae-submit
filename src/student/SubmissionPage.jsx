@@ -7,6 +7,7 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../auth/ThemeContext';
+import DOMPurify from 'dompurify';
 import '../styles/submission.css';
 
 // Convert a Google Docs URL to the /preview embed URL
@@ -560,7 +561,7 @@ export default function SubmissionPage() {
                   <div className="feedback-box">
                     <div className="feedback-box__label">Feedback</div>
                     {draftData.mark != null && <div className="feedback-box__mark">Mark: <strong>{draftData.mark}</strong></div>}
-                    <div className="feedback-box__text" dangerouslySetInnerHTML={{ __html: draftData.feedback }} />
+                    <div className="feedback-box__text" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(draftData.feedback) }} />
                   </div>
                 )}
                 
@@ -571,7 +572,7 @@ export default function SubmissionPage() {
                     <div 
                       className="editor-body" 
                       style={{ minHeight: 'auto', maxHeight: '50vh', overflowY: 'auto', padding: '16px 20px', background: 'var(--bg-card)', border: '1px solid var(--border)', cursor: 'default' }} 
-                      dangerouslySetInnerHTML={{ __html: draftData.response || draftData.plainResponse }} 
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(draftData.response || draftData.plainResponse) }} 
                     />
                   </div>
                 )}
