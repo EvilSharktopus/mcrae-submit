@@ -634,8 +634,8 @@ export default function SubmissionPage() {
                   suppressContentEditableWarning
                   spellCheck="true"
                   autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
+                  autoCorrect="on"
+                  autoCapitalize="on"
                   data-gramm="false"
                   data-gramm_editor="false"
                   data-enable-grammarly="false"
