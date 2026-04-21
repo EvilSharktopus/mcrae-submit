@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "mcrae-assignments"
+    "default": "mcrae-assignments-ca",
+    "old": "mcrae-assignments"
   }
 }
