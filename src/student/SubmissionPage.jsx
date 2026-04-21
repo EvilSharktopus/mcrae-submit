@@ -147,11 +147,12 @@ export default function SubmissionPage() {
     if (!user || !assignmentId) return;
     const q = query(
       collection(db, 'help_requests'),
-      where('studentEmail', '==', user.email),
-      where('assignmentId', '==', assignmentId)
+      where('studentEmail', '==', user.email)
     );
     const unsub = onSnapshot(q, snap => {
-      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const all = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(r => r.assignmentId === assignmentId); // filter client-side
       setActiveRequest(all.find(r => !r.resolved) || null);
       
       const msgs = all
