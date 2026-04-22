@@ -556,7 +556,7 @@ export default function SubmissionPage() {
                               display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
                             }}
                           >
-                            <span style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.5 }}>{d.text || '—'}</span>
+                            <span style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.5 }}>{d.studentText || d.text || '—'}</span>
                             <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
                               {d.label ? `${d.label} · ` : ''}{d.points != null ? `${d.points} pts` : ''}
                             </span>
