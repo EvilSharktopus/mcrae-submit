@@ -43,7 +43,7 @@ Output ONLY strict, valid JSON matching this schema:
 Be precise. Return the raw JSON without any markdown formatting wrappers.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash-preview-04-17',
       contents: [{
         role: 'user',
         parts: [
@@ -288,7 +288,7 @@ Be fair but rigorous. Match the quality of the writing to the descriptor that be
   try {
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY.value() });
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash-preview-04-17',
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: { responseMimeType: 'application/json' }
     });
