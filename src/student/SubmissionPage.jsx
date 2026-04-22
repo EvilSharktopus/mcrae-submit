@@ -33,6 +33,8 @@ export default function SubmissionPage() {
   const navigate         = useNavigate();
 
   const [assignment,     setAssignment]     = useState(null);
+  const [rubric,         setRubric]         = useState(null);
+  const [showRubric,     setShowRubric]     = useState(false);
   const [draftData,      setDraftData]      = useState(null);   // existing Firestore doc
   const [loading,        setLoading]        = useState(true);
   const [mobileTab,      setMobileTab]      = useState('assignment');
@@ -107,9 +109,15 @@ export default function SubmissionPage() {
         const subSnap = await getDoc(docRef);
 
         unsubAssign = onSnapshot(doc(db, 'assignments', assignmentId), aDoc => {
-          if (!aDoc.exists()) { navigate('/'); return; }
-          setAssignment({ id: aDoc.id, ...aDoc.data() });
-          setLoading(false); // only render once assignment data is here
+          const aData = { id: aDoc.id, ...aDoc.data() };
+          setAssignment(aData);
+          setLoading(false);
+          // Fetch rubric once if assignment has one
+          if (aData.rubricId && !rubric) {
+            getDoc(doc(db, 'rubrics', aData.rubricId))
+              .then(rSnap => { if (rSnap.exists()) setRubric(rSnap.data()); })
+              .catch(() => {});
+          }
         });
 
         if (subSnap.exists()) {
@@ -518,11 +526,49 @@ export default function SubmissionPage() {
                   <span className="doc-embed-header__name">{assignment.name}</span>
                   {assignment.stream && <span className="submission-header__stream">{assignment.stream}</span>}
                 </div>
-                <a href={assignment.docUrl} target="_blank" rel="noreferrer" className="btn btn--secondary btn--sm" style={{ flexShrink: 0 }}>
-                  ↗ New tab
-                </a>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  {rubric && (
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      onClick={() => setShowRubric(r => !r)}
+                    >
+                      {showRubric ? '← Assignment' : '📋 See Rubric'}
+                    </button>
+                  )}
+                  <a href={assignment.docUrl} target="_blank" rel="noreferrer" className="btn btn--secondary btn--sm" style={{ flexShrink: 0 }}>
+                    ↗ New tab
+                  </a>
+                </div>
               </div>
-              <iframe src={toEmbedUrl(assignment.docUrl)} className="doc-embed-iframe" title={assignment.name} />
+              {showRubric && rubric ? (
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+                  {rubric.categories?.map((cat, ci) => (
+                    <div key={ci} style={{ marginBottom: 20 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: 'var(--text)' }}>{cat.name}</div>
+                      <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+                        {(cat.descriptors || []).map((d, di) => (
+                          <div
+                            key={di}
+                            style={{
+                              padding: '8px 14px',
+                              borderBottom: di < cat.descriptors.length - 1 ? '1px solid var(--border)' : 'none',
+                              background: 'var(--bg-card)',
+                              display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
+                            }}
+                          >
+                            <span style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.5 }}>{d.text || '—'}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
+                              {d.label ? `${d.label} · ` : ''}{d.points != null ? `${d.points} pts` : ''}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <iframe src={toEmbedUrl(assignment.docUrl)} className="doc-embed-iframe" title={assignment.name} />
+              )}
             </>
           ) : (
             <div className="assignment-info-pane">
