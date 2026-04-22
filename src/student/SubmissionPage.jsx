@@ -606,7 +606,7 @@ export default function SubmissionPage() {
                     style={{ marginTop: 16 }}
                     onClick={handleUnsubmit}
                   >
-                    Unsubmit
+                    Edit Submission
                   </button>
                 )}
 
