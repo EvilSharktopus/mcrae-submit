@@ -273,7 +273,7 @@ ${essayText}
 INSTRUCTIONS:
 1. Read the essay carefully.
 2. For each rubric category, select the single best-matching descriptor index (0-based integer).
-3. Write 2-4 sentences of specific, constructive feedback referencing what the student did well and what could improve.
+3. Write 2-4 sentences of specific, constructive feedback referencing what the student did well and what could improve. Write like a teacher talking directly to a student — use clear, everyday words. Avoid academic phrases like "would significantly enhance" or "rather than mere assertions". Say things like "Your point about X was strong. To improve, try adding a specific example to support Y." Be encouraging but honest.
 4. Return ONLY valid JSON matching this exact schema:
 {
   "selections": {
