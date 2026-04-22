@@ -579,6 +579,26 @@ export default function SubmissionPage() {
                 <div className="submission-success__icon">✓</div>
                 <h2>Submitted</h2>
                 <p>Your response has been received. You'll get an email when it's been marked.</p>
+
+                {/* Action buttons — kept at top so they're always visible */}
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 }}>
+                  {!draftData?.emailSent && (
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      onClick={handleUnsubmit}
+                    >
+                      Edit Submission
+                    </button>
+                  )}
+                  {draftData?.emailSent && !isClosed && (
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      onClick={() => setIsRevisionMode(true)}
+                    >
+                      Revise Marked Submission
+                    </button>
+                  )}
+                </div>
                 {draftData?.emailSent && draftData?.feedback && (
                   <div className="feedback-box">
                     <div className="feedback-box__label">Feedback</div>
@@ -599,27 +619,6 @@ export default function SubmissionPage() {
                   </div>
                 )}
 
-                {/* Unsubmit — only available before teacher has marked */}
-                {!draftData?.emailSent && (
-                  <button
-                    className="btn btn--secondary btn--sm"
-                    style={{ marginTop: 16 }}
-                    onClick={handleUnsubmit}
-                  >
-                    Edit Submission
-                  </button>
-                )}
-
-                {/* Revise — only available after mark email sent and assignment is open */}
-                {draftData?.emailSent && !isClosed && (
-                  <button
-                    className="btn btn--secondary btn--sm"
-                    style={{ marginTop: 16 }}
-                    onClick={() => setIsRevisionMode(true)}
-                  >
-                    Revise Marked Submission
-                  </button>
-                )}
               </div>
             )}
 
