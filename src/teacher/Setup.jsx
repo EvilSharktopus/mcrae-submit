@@ -568,6 +568,11 @@ export default function Setup() {
 
   useEffect(() => { load(); }, []);
 
+  useEffect(() => {
+    document.body.classList.add('hide-bg');
+    return () => document.body.classList.remove('hide-bg');
+  }, []);
+
   async function archiveSchoolYear() {
     const year = currentSchoolYear();
     const sSnap = await getDocs(collection(db, 'submissions'));

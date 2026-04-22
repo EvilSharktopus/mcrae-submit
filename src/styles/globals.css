@@ -41,7 +41,19 @@ html, body, #root {
   font-size: 14px;
   line-height: 1.5;
 }
-
+/* Faded background image throughout the app */
+body {
+  position: relative;
+  isolation: isolate;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: -1;
+  background: url('/submit-home.png') center center / cover no-repeat;
+  opacity: 0.18;
+  pointer-events: none;
+}
+body.hide-bg::before { display: none; }
 
 /* Nav */
 .app-nav {
