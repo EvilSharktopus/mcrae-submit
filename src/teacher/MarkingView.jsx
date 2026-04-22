@@ -296,8 +296,8 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
             </button>
           )}
           {aiUsed && <span style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic' }}>AI Draft applied</span>}
-          <button className="btn btn--success" onClick={handleSendMark} disabled={sending || sent}>
-            {sent ? '✓ Sent' : sending ? 'Sending…' : 'Send Mark'}
+          <button className="btn btn--success" onClick={handleSendMark} disabled={sending}>
+            {sending ? 'Sending…' : sent ? 'Resend Mark' : 'Send Mark'}
           </button>
         </div>
       </div>
