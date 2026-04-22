@@ -227,7 +227,7 @@ export default function LoginPage() {
             </div>
             {error && <p className="login-error">{error}</p>}
             <button className="login-btn" type="submit" disabled={loading}>
-              {loading ? 'Signing inâ€¦' : 'Sign In'}
+              {loading ? 'Signing in…' : 'Sign In'}
             </button>
             <div className="login-links">
               <button type="button" className="login-link" onClick={() => clearForm(VIEWS.reset)}>
@@ -272,10 +272,10 @@ export default function LoginPage() {
             />
             {error && <p className="login-error">{error}</p>}
             <button className="login-btn" type="submit" disabled={loading}>
-              {loading ? 'Creating accountâ€¦' : 'Create Account'}
+              {loading ? 'Creating account…' : 'Create Account'}
             </button>
             <button type="button" className="login-link" onClick={() => clearForm(VIEWS.signin)}>
-              â† Back to sign in
+              â†  Back to sign in
             </button>
           </form>
         )}
@@ -298,12 +298,12 @@ export default function LoginPage() {
                 />
                 {error && <p className="login-error">{error}</p>}
                 <button className="login-btn" type="submit" disabled={loading}>
-                  {loading ? 'Sendingâ€¦' : 'Send Reset Link'}
+                  {loading ? 'Sending…' : 'Send Reset Link'}
                 </button>
               </>
             )}
             <button type="button" className="login-link" onClick={() => clearForm(VIEWS.signin)}>
-              â† Back to sign in
+              â†  Back to sign in
             </button>
           </form>
         )}
