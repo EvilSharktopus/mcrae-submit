@@ -420,6 +420,16 @@ export default function SubmissionPage() {
     }
   };
 
+  // ── Unsubmit (revert to draft before marking) ──────────────────────────────
+  const handleUnsubmit = async () => {
+    try {
+      await updateDoc(docRef, { submitted: false, submittedAt: null });
+      setDraftData(prev => ({ ...prev, submitted: false, submittedAt: null }));
+    } catch (err) {
+      console.error('Unsubmit failed:', err);
+    }
+  };
+
   // ── Ask Mr. McRae ─────────────────────────────────────────────────────────
   const handleAskSubmit = async () => {
     setAskSending(true);
@@ -589,9 +599,25 @@ export default function SubmissionPage() {
                   </div>
                 )}
 
-                {!isClosed && (
-                  <button className="btn btn--secondary btn--sm" style={{ marginTop: 16 }} onClick={() => setIsRevisionMode(true)}>
-                    Submit a revision
+                {/* Unsubmit — only available before teacher has marked */}
+                {!draftData?.emailSent && (
+                  <button
+                    className="btn btn--secondary btn--sm"
+                    style={{ marginTop: 16 }}
+                    onClick={handleUnsubmit}
+                  >
+                    Unsubmit
+                  </button>
+                )}
+
+                {/* Revise — only available after mark email sent and assignment is open */}
+                {draftData?.emailSent && !isClosed && (
+                  <button
+                    className="btn btn--secondary btn--sm"
+                    style={{ marginTop: 16 }}
+                    onClick={() => setIsRevisionMode(true)}
+                  >
+                    Revise Marked Submission
                   </button>
                 )}
               </div>
