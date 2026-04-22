@@ -140,6 +140,8 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
         mark,
         feedback: feedback.trim(),
         rubricBreakdown: rubricBreakdown.length > 0 ? rubricBreakdown : null,
+        finalSelections: selections,    // store teacher's actual picks for AI accuracy report
+        markedAt: new Date(),
       });
       const sendMark = httpsCallable(functions, 'sendMark');
       await sendMark({

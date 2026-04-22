@@ -105,6 +105,44 @@ export default function Dashboard() {
     exportCSV(`${asn.name.replace(/\s+/g, '_')}_grades.csv`, headers, rows);
   };
 
+  const handleExportAiAccuracy = (asn, subs) => {
+    const rubric   = rubrics.find(r => r.id === asn.rubricId);
+    const cats     = rubric?.categories || [];
+
+    // Only include submissions that have BOTH ai draft and final selections
+    const comparable = subs.filter(s => s.aiDraftSelections && s.finalSelections);
+    if (comparable.length === 0) {
+      alert('No submissions with both AI draft and final marks yet.');
+      return;
+    }
+
+    const headers = ['Student', 'Email', 'Category', 'AI Label', 'AI Score', 'Teacher Label', 'Teacher Score', 'Exact Match', 'Point Diff'];
+    const rows = [];
+
+    comparable.forEach(s => {
+      cats.forEach((cat, i) => {
+        const ai  = s.aiDraftSelections[i];
+        const fin = s.finalSelections[i];
+        if (!ai && !fin) return;
+        const aiLabel    = ai?.label  ?? '—';
+        const aiScore    = ai?.points ?? '';
+        const finLabel   = fin?.label ?? '—';
+        const finScore   = fin?.points ?? '';
+        const match      = ai?.descriptorIndex === fin?.descriptorIndex ? 'Y' : 'N';
+        const diff       = (fin?.points != null && ai?.points != null) ? fin.points - ai.points : '';
+        rows.push([s.studentName, s.studentEmail, cat.name, aiLabel, aiScore, finLabel, finScore, match, diff]);
+      });
+    });
+
+    // Summary row
+    const totalRows   = rows.length;
+    const exactMatch  = rows.filter(r => r[7] === 'Y').length;
+    rows.push([]);
+    rows.push(['SUMMARY', '', `${comparable.length} submissions`, '', '', '', '', `${exactMatch}/${totalRows} exact (${Math.round(exactMatch/totalRows*100)}%)`, '']);
+
+    exportCSV(`${asn.name.replace(/\s+/g, '_')}_ai_accuracy.csv`, headers, rows);
+  };
+
   if (loading) return <div className="loading-screen"><span className="spinner" /></div>;
 
   // ── Compute current assignment students list ──────────────────────────────
@@ -177,6 +215,13 @@ export default function Dashboard() {
             onClick={() => handleExport(selectedAssignment, assignmentSubs)}
           >
             ↓ Export CSV
+          </button>
+          <button
+            className="btn btn--secondary btn--sm"
+            title="Compare AI draft marks vs your final marks"
+            onClick={() => handleExportAiAccuracy(selectedAssignment, assignmentSubs)}
+          >
+            🤖 AI Accuracy
           </button>
           <div style={{ display: 'flex', gap: 20 }}>
             <div className="detail-stat">
