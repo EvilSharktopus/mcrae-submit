@@ -30,6 +30,9 @@ Paste and drag-and-drop functionality in the text editor is intentionally disabl
 ### No Guarantee of Availability
 This application is provided as a convenience tool. Mr. McRae is not liable for assignment loss due to technical failure. Students are encouraged to retain copies of completed work.
 
+### Parental Consent
+Student access to this application must be supported by written consent from a parent or guardian.
+
 _Last updated: April 2026_
 `;
 
@@ -71,8 +74,8 @@ All student data is stored in Canada.
 ### Data Retention
 Data is retained for the current school year and may be archived by Mr. McRae. You may request access to or deletion of your data by emailing amcrae@rvschools.ab.ca.
 
-### FOIP Rights (Alberta)
-Under Alberta's Freedom of Information and Protection of Privacy Act, you have the right to request access to or correction of your information. Contact Mr. McRae or Rocky View Schools' FOIP Coordinator (403-945-4000).
+### POPA Rights (Alberta)
+Under Alberta's Protection of Privacy Act (POPA), you have the right to request access to or correction of your information. Contact Mr. McRae or Rocky View Schools' Privacy Officer (403-945-4000).
 
 _Last updated: April 2026_
 `;
