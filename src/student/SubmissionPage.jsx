@@ -786,8 +786,7 @@ export default function SubmissionPage() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3 className="modal-title">Submit this assignment?</h3>
             <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: '8px 0 0' }}>
-              Once submitted, you won't be able to edit until Mr. McRae opens it for revision.
-              Your submission will be included in the feedback email when it's marked.
+              You can still edit your submission until the assignment is closed. Once it's closed, your work will be marked as-is.
             </p>
             <div className="modal-footer" style={{ marginTop: 20 }}>
               <button className="btn btn--secondary btn--sm" onClick={() => setShowConfirm(false)}>Cancel</button>
