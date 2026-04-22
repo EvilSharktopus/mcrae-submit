@@ -1,7 +1,17 @@
 /* src/styles/login.css */
 .login-page {
   display: flex; align-items: center; justify-content: center;
-  min-height: 100vh; background: var(--bg);
+  min-height: 100vh;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+/* Background image with fade */
+.login-page::before {
+  content: '';
+  position: absolute; inset: 0; z-index: -1;
+  background: url('/submit-home.png') center center / cover no-repeat;
+  opacity: 0.18;
 }
 .login-card {
   background: var(--bg-card); border: 1px solid var(--border);
