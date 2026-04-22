@@ -1,9 +1,11 @@
 // src/auth/LoginPage.jsx
 import { useState } from 'react';
+import { auth } from '../firebase';
+import { setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { useAuth } from './AuthContext';
 import '../styles/login.css';
 
-// ── Policy text ──────────────────────────────────────────────────────────────
+// â”€â”€ Policy text â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const TERMS_CONTENT = `
 ## Terms of Use
@@ -34,7 +36,7 @@ _Last updated: April 2026_
 const PRIVACY_CONTENT = `
 ## Privacy Policy
 
-**Operator:** Adam McRae — Springbank Community High School, Rocky View Schools
+**Operator:** Adam McRae â€” Springbank Community High School, Rocky View Schools
 **Data location:** Toronto, Canada (northamerica-northeast2)
 
 ### Information Collected
@@ -75,7 +77,7 @@ Under Alberta's Freedom of Information and Protection of Privacy Act, you have t
 _Last updated: April 2026_
 `;
 
-// ── Policy Modal ─────────────────────────────────────────────────────────────
+// â”€â”€ Policy Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function PolicyModal({ title, content, onClose }) {
   const lines = content.trim().split('\n');
@@ -84,7 +86,7 @@ function PolicyModal({ title, content, onClose }) {
       <div className="policy-modal" onClick={e => e.stopPropagation()}>
         <div className="policy-modal__header">
           <h2 className="policy-modal__title">{title}</h2>
-          <button className="policy-modal__close" onClick={onClose} aria-label="Close">✕</button>
+          <button className="policy-modal__close" onClick={onClose} aria-label="Close">âœ•</button>
         </div>
         <div className="policy-modal__body">
           {lines.map((line, i) => {
@@ -104,7 +106,7 @@ function PolicyModal({ title, content, onClose }) {
   );
 }
 
-// ── Login Page ───────────────────────────────────────────────────────────────
+// â”€â”€ Login Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const VIEWS = { signin: 'signin', signup: 'signup', reset: 'reset' };
 
@@ -119,6 +121,7 @@ export default function LoginPage() {
   const [resetSent,   setResetSent]   = useState(false);
   const [loading,     setLoading]     = useState(false);
   const [modal,       setModal]       = useState(null);
+  const [rememberMe,  setRememberMe]  = useState(true);
 
   const clearForm = (nextView) => {
     setError(''); setResetSent(false);
@@ -143,6 +146,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       await signIn(email, password);
     } catch (err) {
       setError(friendlyError(err.code));
@@ -186,7 +190,7 @@ export default function LoginPage() {
            : 'Reset your password'}
         </p>
 
-        {/* ── Sign In ── */}
+        {/* â”€â”€ Sign In â”€â”€ */}
         {view === VIEWS.signin && (
           <form className="login-form" onSubmit={handleSignIn}>
             <input
@@ -207,9 +211,20 @@ export default function LoginPage() {
               autoComplete="current-password"
               required
             />
+            <div className="login-remember">
+              <label className="login-remember__label">
+                <input
+                  type="checkbox"
+                  className="login-remember__check"
+                  checked={rememberMe}
+                  onChange={e => setRememberMe(e.target.checked)}
+                />
+                Remember me
+              </label>
+            </div>
             {error && <p className="login-error">{error}</p>}
             <button className="login-btn" type="submit" disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign In'}
+              {loading ? 'Signing inâ€¦' : 'Sign In'}
             </button>
             <div className="login-links">
               <button type="button" className="login-link" onClick={() => clearForm(VIEWS.reset)}>
@@ -222,7 +237,7 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* ── Sign Up ── */}
+        {/* â”€â”€ Sign Up â”€â”€ */}
         {view === VIEWS.signup && (
           <form className="login-form" onSubmit={handleSignUp}>
             <input
@@ -254,15 +269,15 @@ export default function LoginPage() {
             />
             {error && <p className="login-error">{error}</p>}
             <button className="login-btn" type="submit" disabled={loading}>
-              {loading ? 'Creating account…' : 'Create Account'}
+              {loading ? 'Creating accountâ€¦' : 'Create Account'}
             </button>
             <button type="button" className="login-link" onClick={() => clearForm(VIEWS.signin)}>
-              ← Back to sign in
+              â† Back to sign in
             </button>
           </form>
         )}
 
-        {/* ── Password Reset ── */}
+        {/* â”€â”€ Password Reset â”€â”€ */}
         {view === VIEWS.reset && (
           <form className="login-form" onSubmit={handleReset}>
             {resetSent ? (
@@ -280,19 +295,19 @@ export default function LoginPage() {
                 />
                 {error && <p className="login-error">{error}</p>}
                 <button className="login-btn" type="submit" disabled={loading}>
-                  {loading ? 'Sending…' : 'Send Reset Link'}
+                  {loading ? 'Sendingâ€¦' : 'Send Reset Link'}
                 </button>
               </>
             )}
             <button type="button" className="login-link" onClick={() => clearForm(VIEWS.signin)}>
-              ← Back to sign in
+              â† Back to sign in
             </button>
           </form>
         )}
 
         <div className="login-policy-links">
           <button className="login-policy-btn" onClick={() => setModal('terms')}>Terms of Use</button>
-          <span className="login-policy-sep">·</span>
+          <span className="login-policy-sep">Â·</span>
           <button className="login-policy-btn" onClick={() => setModal('privacy')}>Privacy</button>
         </div>
       </div>

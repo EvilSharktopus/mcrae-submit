@@ -114,3 +114,11 @@
 .policy-modal__body strong { color: var(--text); }
 .policy-modal__fine { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
 
+
+/* -- Remember me -- */
+.login-remember { width: 100%; margin: -2px 0 2px; }
+.login-remember__label {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; color: var(--text-dim); cursor: pointer; user-select: none;
+}
+.login-remember__check { width: 13px; height: 13px; accent-color: var(--accent); cursor: pointer; }
