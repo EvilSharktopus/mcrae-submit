@@ -198,9 +198,7 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
 
   // ── Rubric render helper ──────────────────────────────────────────────────
   const renderRubricCategory = (cat, catIdx) => {
-    const groups = groupByLabel(cat.descriptors || []);
     const sel = selections[catIdx];
-
     return (
       <div key={catIdx} className="rubric-category">
         <div className="rubric-category__name">
@@ -208,42 +206,18 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
           {sel != null && <span className="rubric-category__points">+{sel.points}</span>}
           {sel?.label && <span className="rubric-category__tier-badge">{sel.label}</span>}
         </div>
-
-        {groups ? (
-          // ── Tier-grouped mode (labelled descriptors) ──
-          <div className="rubric-tiers">
-            {groups.filter(g => g.label !== 'INS').map(group => (
-              <div key={group.label} className="rubric-tier">
-                <span className="rubric-tier__label">{group.label}</span>
-                <div className="rubric-tier__btns">
-                  {group.entries.map(e => (
-                    <button
-                      key={e.idx}
-                      className={`rubric-pt-btn ${sel?.descriptorIndex === e.idx ? 'selected' : ''}`}
-                      onClick={() => selectDescriptor(catIdx, e.idx, e.descriptor)}
-                    >
-                      {e.points}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          // ── Legacy mode (no labels — show full descriptor text) ──
-          <div className="rubric-descriptors">
-            {(cat.descriptors || []).map((desc, descIdx) => (
-              <button
-                key={descIdx}
-                className={`rubric-descriptor ${sel?.descriptorIndex === descIdx ? 'selected' : ''}`}
-                onClick={() => selectDescriptor(catIdx, descIdx, desc)}
-              >
-                <span className="rubric-descriptor__points">{desc.points}</span>
-                <span className="rubric-descriptor__text">{desc.text}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="rubric-pts-row">
+          {(cat.descriptors || []).map((desc, descIdx) => (
+            <button
+              key={descIdx}
+              className={`rubric-pt-btn ${sel?.descriptorIndex === descIdx ? 'selected' : ''}`}
+              onClick={() => selectDescriptor(catIdx, descIdx, desc)}
+              title={desc.text || ''}
+            >
+              {desc.points}
+            </button>
+          ))}
+        </div>
       </div>
     );
   };

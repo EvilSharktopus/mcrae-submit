@@ -82,6 +82,9 @@
 .rubric-pt-btn:hover { border-color: var(--accent); color: var(--accent); }
 .rubric-pt-btn.selected { background: var(--success); border-color: var(--success); color: #fff; }
 
+/* Flat horizontal points row (replaces tier grouping) */
+.rubric-pts-row { display: flex; gap: 4px; flex-wrap: wrap; }
+
 /* Legacy descriptor fallback (rubrics without label field) */
 .rubric-descriptors { display: flex; flex-direction: column; gap: 5px; }
 .rubric-descriptor {
