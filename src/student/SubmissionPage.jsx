@@ -483,9 +483,18 @@ export default function SubmissionPage() {
           <h1 className="submission-header__title">{assignment.name}</h1>
           {assignment.stream && <span className="submission-header__stream">{assignment.stream}</span>}
         </div>
-        <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
-          {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {showEditor && !isClosed && (
+            <span style={{ fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
+              {saveStatus === 'saving' && '💾 Saving…'}
+              {saveStatus === 'saved'  && `✓ Saved ${relativeTime(lastSaved)}`}
+              {saveStatus === 'idle'   && lastSaved && `✓ Saved ${relativeTime(lastSaved)}`}
+            </span>
+          )}
+          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
+            {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+          </button>
+        </div>
       </div>
 
       {/* Mobile tabs */}
