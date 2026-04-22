@@ -81,6 +81,32 @@ exports.sendMark = onCall({ secrets: [RESEND_API_KEY] }, async (request) => {
     throw new HttpsError('invalid-argument', 'Missing required fields.');
   }
 
+  // ── Fetch student’s own submission text from Firestore ───────────────────
+  let submissionHtml = '';
+  try {
+    const subSnap = await admin.firestore().collection('submissions').doc(submissionId).get();
+    if (subSnap.exists) {
+      const plainText = subSnap.data().plainResponse || '';
+      if (plainText.trim()) {
+        // Escape HTML entities and convert newlines to <br>
+        const escaped = plainText
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/\n/g, '<br>');
+        submissionHtml = `
+          <div style="margin:24px 0 0">
+            <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#888;margin-bottom:8px">Your Submission</p>
+            <div style="background:#f8f9fb;border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;font-size:13px;line-height:1.7;color:#444">
+              ${escaped}
+            </div>
+          </div>`;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not fetch submission text:', e.message);
+  }
+
   // ── Build rubric breakdown table ──────────────────────────────────────────
   let rubricHtml = '';
   if (rubricBreakdown && rubricBreakdown.length > 0 && rubricBreakdown.some(r => r.label)) {
@@ -139,6 +165,7 @@ exports.sendMark = onCall({ secrets: [RESEND_API_KEY] }, async (request) => {
         <p style="color:#555;margin:0 0 20px">Your submission for <strong>${assignmentName}</strong> has been marked.</p>
         ${rubricHtml}
         ${feedbackHtml}
+        ${submissionHtml}
         <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
         <p style="color:#999;font-size:12px;margin:0">McRae Submit &mdash; Social Studies</p>
       </div>

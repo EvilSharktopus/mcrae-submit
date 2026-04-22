@@ -42,6 +42,7 @@ export default function SubmissionPage() {
   const [isRevisionMode, setIsRevisionMode] = useState(false);
   const [isResubmission, setIsResubmission] = useState(false);
   const [submitting,     setSubmitting]     = useState(false);
+  const [showConfirm,    setShowConfirm]    = useState(false);
 
   // Ask Mr. McRae modal
   const [askModal,   setAskModal]   = useState(false);
@@ -694,7 +695,7 @@ export default function SubmissionPage() {
                     <button className="btn btn--secondary btn--sm" onClick={() => setAskModal(true)}>
                       🙋 Ask Mr. McRae
                     </button>
-                    <button className="btn btn--primary" onClick={handleSubmit} disabled={submitting || wordCount === 0}>
+                    <button className="btn btn--primary" onClick={() => setShowConfirm(true)} disabled={submitting || wordCount === 0}>
                       {submitting ? 'Submitting…' : isRevisionMode ? 'Submit Revision' : 'Submit'}
                     </button>
                   </div>
@@ -742,6 +743,29 @@ export default function SubmissionPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Submit Modal */}
+      {showConfirm && (
+        <div className="modal-overlay" onClick={() => setShowConfirm(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3 className="modal-title">Submit this assignment?</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: '8px 0 0' }}>
+              Once submitted, you won't be able to edit until Mr. McRae opens it for revision.
+              Your submission will be included in the feedback email when it's marked.
+            </p>
+            <div className="modal-footer" style={{ marginTop: 20 }}>
+              <button className="btn btn--secondary btn--sm" onClick={() => setShowConfirm(false)}>Cancel</button>
+              <button
+                className="btn btn--primary btn--sm"
+                onClick={() => { setShowConfirm(false); handleSubmit(); }}
+                disabled={submitting}
+              >
+                {submitting ? 'Submitting…' : 'Yes, submit'}
+              </button>
+            </div>
           </div>
         </div>
       )}
