@@ -179,9 +179,6 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <div className="login-logo">
-          <img src="/logo.png" alt="McRae Social" className="login-logo__img" />
-        </div>
         <h1 className="login-title">McRae Submit</h1>
         <p className="login-subtitle">
           {view === VIEWS.signin ? 'Sign in to submit or review assignments'
@@ -302,6 +299,11 @@ export default function LoginPage() {
 
       {modal === 'terms'   && <PolicyModal title="Terms of Use"   content={TERMS_CONTENT}   onClose={() => setModal(null)} />}
       {modal === 'privacy' && <PolicyModal title="Privacy Policy" content={PRIVACY_CONTENT} onClose={() => setModal(null)} />}
+
+      {/* Bottom-centre logo */}
+      <div className="login-page-logo">
+        <img src="/logo.png" alt="McRae Social" className="login-page-logo__img" />
+      </div>
     </div>
   );
 }

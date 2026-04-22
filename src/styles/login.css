@@ -15,11 +15,19 @@
 }
 .login-card {
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 40px 36px;
+  border-radius: var(--radius-lg); padding: 28px 36px 24px;
   text-align: center; width: 100%; max-width: 380px;
   display: flex; flex-direction: column; align-items: center; gap: 12px;
 }
-.login-logo__img { width: 52px; height: 52px; object-fit: contain; border-radius: 8px; }
+/* Bottom-center page logo */
+.login-page-logo {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  z-index: 10;
+}
+.login-page-logo__img {
+  width: 64px; height: 64px; object-fit: contain; border-radius: 12px;
+  opacity: 0.85;
+}
 .login-title { font-size: 22px; font-weight: 700; color: var(--text); }
 .login-subtitle { font-size: 13px; color: var(--text-dim); margin-bottom: 8px; }
 .login-btn {
