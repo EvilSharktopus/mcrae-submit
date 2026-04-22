@@ -424,15 +424,10 @@ export default function SubmissionPage() {
   const handleUnsubmit = async () => {
     try {
       await updateDoc(docRef, { submitted: false, submittedAt: null });
+      // Reset the guard so the content useEffect re-populates the editor
+      // after React re-renders and puts the editor back in the DOM
+      initialContentSet.current = false;
       setDraftData(prev => ({ ...prev, submitted: false, submittedAt: null }));
-      // Re-populate the editor on the next render tick once it's back in the DOM
-      setTimeout(() => {
-        if (editorRef.current && draftData?.response) {
-          editorRef.current.innerHTML = draftData.response;
-          updateWordCount();
-          editorRef.current.focus();
-        }
-      }, 0);
     } catch (err) {
       console.error('Unsubmit failed:', err);
     }
