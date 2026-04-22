@@ -288,15 +288,22 @@ Be fair but rigorous. Match the quality of the writing to the descriptor that be
   try {
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY.value() });
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: { responseMimeType: 'application/json' }
     });
 
-    const result = JSON.parse(response.text);
+    let raw = response.text;
+    // Strip markdown fences if model ignored responseMimeType
+    const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) raw = fenceMatch[1];
+
+    const result = JSON.parse(raw.trim());
     return result;
   } catch (err) {
     console.error('AI Marking Error:', err);
-    throw new HttpsError('internal', 'AI marking failed.', err.message);
+    // Surface the real underlying message to the client
+    const detail = err.message || String(err);
+    throw new HttpsError('internal', `AI marking failed: ${detail}`);
   }
 });
