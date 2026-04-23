@@ -395,10 +395,51 @@ const UNITS_FOR = {
 const selStyle = { fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)' };
 
 function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
-  const [copyOpen,   setCopyOpen]   = useState(false);
-  const [tgtCourse,  setTgtCourse]  = useState(COURSES[0]);
-  const [tgtStream,  setTgtStream]  = useState('-1');
-  const [copying,    setCopying]    = useState(false);
+  const [copyOpen,     setCopyOpen]     = useState(false);
+  const [schedOpen,    setSchedOpen]    = useState(false);
+  const [tgtCourse,    setTgtCourse]    = useState(COURSES[0]);
+  const [tgtStream,    setTgtStream]    = useState('-1');
+  const [copying,      setCopying]      = useState(false);
+  const [savingSched,  setSavingSched]  = useState(false);
+
+  // Local schedule state — initialise from Firestore values
+  const toInputVal = (ts) => {
+    if (!ts) return '';
+    // Firestore Timestamp → Date, or already a string
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    if (isNaN(d)) return '';
+    // datetime-local needs "YYYY-MM-DDTHH:mm"
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  const [openAtVal,  setOpenAtVal]  = useState(() => toInputVal(a.openAt));
+  const [closeAtVal, setCloseAtVal] = useState(() => toInputVal(a.closeAt));
+
+  const hasSchedule = !!(a.openAt || a.closeAt);
+
+  const handleSaveSchedule = async () => {
+    setSavingSched(true);
+    try {
+      const update = {
+        openAt:  openAtVal  ? new Date(openAtVal)  : null,
+        closeAt: closeAtVal ? new Date(closeAtVal) : null,
+      };
+      await updateDoc(doc(db, 'assignments', a.id), update);
+      onUpdate?.(a.id, update);
+      setSchedOpen(false);
+    } finally { setSavingSched(false); }
+  };
+
+  const handleClearSchedule = async () => {
+    setSavingSched(true);
+    try {
+      await updateDoc(doc(db, 'assignments', a.id), { openAt: null, closeAt: null });
+      onUpdate?.(a.id, { openAt: null, closeAt: null });
+      setOpenAtVal('');
+      setCloseAtVal('');
+      setSchedOpen(false);
+    } finally { setSavingSched(false); }
+  };
 
   const handleCopy = async () => {
     setCopying(true);
@@ -468,16 +509,25 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
           ))}
         </select>
 
-        <button className="btn btn--secondary btn--sm" onClick={() => setCopyOpen(o => !o)}>
+        <button className="btn btn--secondary btn--sm" onClick={() => { setCopyOpen(o => !o); setSchedOpen(false); }}>
           {copyOpen ? '✕' : 'Copy to…'}
         </button>
-        <button className="btn btn--secondary btn--sm" onClick={async () => {
-          if (!window.confirm(`Archive "${a.name}"?`)) return;
-          await updateDoc(doc(db, 'assignments', a.id), { archived: true });
-          onDelete?.();
-        }}>
-          Archive
+        <button
+          className={`btn btn--sm ${hasSchedule ? 'btn--primary' : 'btn--secondary'}`}
+          onClick={() => { setSchedOpen(o => !o); setCopyOpen(false); }}
+          title="Set open/close schedule"
+        >
+          {schedOpen ? '✕' : hasSchedule ? '⏱ Scheduled' : '⏱ Schedule'}
         </button>
+        {!copyOpen && !schedOpen && (
+          <button className="btn btn--secondary btn--sm" onClick={async () => {
+            if (!window.confirm(`Archive "${a.name}"?`)) return;
+            await updateDoc(doc(db, 'assignments', a.id), { archived: true });
+            onDelete?.();
+          }}>
+            Archive
+          </button>
+        )}
       </div>
 
       {/* Copy-to panel */}
@@ -493,6 +543,38 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
           <button className="btn btn--primary btn--sm" onClick={handleCopy} disabled={copying}>
             {copying ? 'Duplicating…' : 'Duplicate'}
           </button>
+        </div>
+      )}
+
+      {/* Schedule panel */}
+      {schedOpen && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px 12px 14px', background: 'var(--bg-input)', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>Opens:</span>
+            <input
+              type="datetime-local"
+              style={{ ...selStyle, fontSize: 12 }}
+              value={openAtVal}
+              onChange={e => setOpenAtVal(e.target.value)}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>Closes:</span>
+            <input
+              type="datetime-local"
+              style={{ ...selStyle, fontSize: 12 }}
+              value={closeAtVal}
+              onChange={e => setCloseAtVal(e.target.value)}
+            />
+          </div>
+          <button className="btn btn--primary btn--sm" onClick={handleSaveSchedule} disabled={savingSched}>
+            {savingSched ? 'Saving…' : 'Save'}
+          </button>
+          {hasSchedule && (
+            <button className="btn btn--secondary btn--sm" onClick={handleClearSchedule} disabled={savingSched}>
+              Clear schedule
+            </button>
+          )}
         </div>
       )}
     </div>

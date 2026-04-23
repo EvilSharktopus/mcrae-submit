@@ -27,12 +27,23 @@ export default function AssignmentList({ section }) {
         if (section) {
           const norm = (s) => s ? (s.startsWith('-') ? s : s.replace(/^\d+/, '')) : '';
           const sStream = norm(section.stream);
+          const now = Date.now();
           all = all.filter(a => {
             const aStream = norm(a.stream);
-            return !a.archived &&
-              a.isOpen !== false &&
-              a.course === section.course &&
-              (!aStream || !sStream || aStream === sStream);
+            if (a.archived) return false;
+            if (a.isOpen === false) return false;
+            if (a.course !== section.course) return false;
+            if (aStream && sStream && aStream !== sStream) return false;
+            // Schedule enforcement
+            if (a.openAt) {
+              const openMs = a.openAt.toDate ? a.openAt.toDate().getTime() : new Date(a.openAt).getTime();
+              if (now < openMs) return false; // not open yet
+            }
+            if (a.closeAt) {
+              const closeMs = a.closeAt.toDate ? a.closeAt.toDate().getTime() : new Date(a.closeAt).getTime();
+              if (now > closeMs) return false; // already closed
+            }
+            return true;
           });
         }
         setAssignments(all);
