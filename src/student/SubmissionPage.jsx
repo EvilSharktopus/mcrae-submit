@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../auth/ThemeContext';
 import DOMPurify from 'dompurify';
+import { isPastCutoff, msUntilCutoff } from '../utils/cutoff';
 import '../styles/submission.css';
 
 // Convert a Google Docs URL to the /preview embed URL
@@ -33,6 +34,8 @@ export default function SubmissionPage() {
   const navigate         = useNavigate();
 
   const [assignment,     setAssignment]     = useState(null);
+  const [rubric,         setRubric]         = useState(null);
+  const [showRubric,     setShowRubric]     = useState(false);
   const [draftData,      setDraftData]      = useState(null);   // existing Firestore doc
   const [loading,        setLoading]        = useState(true);
   const [mobileTab,      setMobileTab]      = useState('assignment');
@@ -107,9 +110,15 @@ export default function SubmissionPage() {
         const subSnap = await getDoc(docRef);
 
         unsubAssign = onSnapshot(doc(db, 'assignments', assignmentId), aDoc => {
-          if (!aDoc.exists()) { navigate('/'); return; }
-          setAssignment({ id: aDoc.id, ...aDoc.data() });
-          setLoading(false); // only render once assignment data is here
+          const aData = { id: aDoc.id, ...aDoc.data() };
+          setAssignment(aData);
+          setLoading(false);
+          // Fetch rubric once if assignment has one
+          if (aData.rubricId && !rubric) {
+            getDoc(doc(db, 'rubrics', aData.rubricId))
+              .then(rSnap => { if (rSnap.exists()) setRubric(rSnap.data()); })
+              .catch(() => {});
+          }
         });
 
         if (subSnap.exists()) {
@@ -240,6 +249,23 @@ export default function SubmissionPage() {
         setSaveStatus('idle');
       }
     }, 5000);
+  }, [assignmentId, user.email]);
+
+  // ── Immediate save (no debounce) — used by cutoff kickout ─────────────────
+  const saveNow = useCallback(async () => {
+    if (!editorRef.current) return;
+    clearTimeout(saveTimer.current);
+    const html  = editorRef.current.innerHTML;
+    const plain = editorRef.current.innerText || '';
+    const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
+    try {
+      await setDoc(docRef, {
+        response: html, plainResponse: plain.trim(), wordCount: wc,
+        lastSaved: serverTimestamp(),
+      }, { merge: true });
+      setSaveStatus('saved');
+      setLastSaved(new Date());
+    } catch (err) { console.error('Force save failed:', err); }
   }, [assignmentId, user.email]);
 
   const handleKeyDown = (e) => {
@@ -420,6 +446,19 @@ export default function SubmissionPage() {
     }
   };
 
+  // ── Unsubmit (revert to draft before marking) ──────────────────────────────
+  const handleUnsubmit = async () => {
+    try {
+      await updateDoc(docRef, { submitted: false, submittedAt: null });
+      // Reset the guard so the content useEffect re-populates the editor
+      // after React re-renders and puts the editor back in the DOM
+      initialContentSet.current = false;
+      setDraftData(prev => ({ ...prev, submitted: false, submittedAt: null }));
+    } catch (err) {
+      console.error('Unsubmit failed:', err);
+    }
+  };
+
   // ── Ask Mr. McRae ─────────────────────────────────────────────────────────
   const handleAskSubmit = async () => {
     setAskSending(true);
@@ -441,6 +480,19 @@ export default function SubmissionPage() {
     } finally { setAskSending(false); }
   };
 
+  // ── Kick students out at cutoff — save first ─────────────────────────────
+  useEffect(() => {
+    if (loading) return;
+    const ms = msUntilCutoff();
+    if (ms <= 0) return; // already past cutoff — render block handles it
+    const id = setTimeout(async () => {
+      await saveNow();
+      sessionStorage.setItem('cutoffKickout', '1');
+      navigate('/', { replace: true });
+    }, ms);
+    return () => clearTimeout(id);
+  }, [loading]);
+
   // ── Update relative time every 10s ───────────────────────────────────────
   const [, forceUpdate] = useState(0);
   useEffect(() => {
@@ -450,7 +502,7 @@ export default function SubmissionPage() {
 
   if (loading) return <div className="loading-screen"><span className="spinner" /></div>;
 
-  const isClosed   = assignment.isOpen === false;
+  const isClosed   = assignment.isOpen === false || isPastCutoff();
   const isSubmitted = draftData?.submitted === true;
   const showSuccess = isSubmitted && !isRevisionMode;
   const showEditor  = !showSuccess;
@@ -470,9 +522,18 @@ export default function SubmissionPage() {
           <h1 className="submission-header__title">{assignment.name}</h1>
           {assignment.stream && <span className="submission-header__stream">{assignment.stream}</span>}
         </div>
-        <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
-          {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {showEditor && !isClosed && (
+            <span style={{ fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>
+              {saveStatus === 'saving' && '💾 Saving…'}
+              {saveStatus === 'saved'  && `✓ Saved ${relativeTime(lastSaved)}`}
+              {saveStatus === 'idle'   && lastSaved && `✓ Saved ${relativeTime(lastSaved)}`}
+            </span>
+          )}
+          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
+            {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+          </button>
+        </div>
       </div>
 
       {/* Mobile tabs */}
@@ -496,11 +557,49 @@ export default function SubmissionPage() {
                   <span className="doc-embed-header__name">{assignment.name}</span>
                   {assignment.stream && <span className="submission-header__stream">{assignment.stream}</span>}
                 </div>
-                <a href={assignment.docUrl} target="_blank" rel="noreferrer" className="btn btn--secondary btn--sm" style={{ flexShrink: 0 }}>
-                  ↗ New tab
-                </a>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  {rubric && (
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      onClick={() => setShowRubric(r => !r)}
+                    >
+                      {showRubric ? '← Assignment' : '📋 See Rubric'}
+                    </button>
+                  )}
+                  <a href={assignment.docUrl} target="_blank" rel="noreferrer" className="btn btn--secondary btn--sm" style={{ flexShrink: 0 }}>
+                    ↗ New tab
+                  </a>
+                </div>
               </div>
-              <iframe src={toEmbedUrl(assignment.docUrl)} className="doc-embed-iframe" title={assignment.name} />
+              {showRubric && rubric ? (
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+                  {rubric.categories?.map((cat, ci) => (
+                    <div key={ci} style={{ marginBottom: 20 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: 'var(--text)' }}>{cat.name}</div>
+                      <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+                        {(cat.descriptors || []).map((d, di) => (
+                          <div
+                            key={di}
+                            style={{
+                              padding: '8px 14px',
+                              borderBottom: di < cat.descriptors.length - 1 ? '1px solid var(--border)' : 'none',
+                              background: 'var(--bg-card)',
+                              display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
+                            }}
+                          >
+                            <span style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.5 }}>{d.studentText || d.text || '—'}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
+                              {d.label ? `${d.label} · ` : ''}{d.points != null ? `${d.points} pts` : ''}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <iframe src={toEmbedUrl(assignment.docUrl)} className="doc-embed-iframe" title={assignment.name} />
+              )}
             </>
           ) : (
             <div className="assignment-info-pane">
@@ -569,6 +668,26 @@ export default function SubmissionPage() {
                 <div className="submission-success__icon">✓</div>
                 <h2>Submitted</h2>
                 <p>Your response has been received. You'll get an email when it's been marked.</p>
+
+                {/* Action buttons — kept at top so they're always visible */}
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 8 }}>
+                  {!draftData?.emailSent && (
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      onClick={handleUnsubmit}
+                    >
+                      Edit Submission
+                    </button>
+                  )}
+                  {draftData?.emailSent && !isClosed && (
+                    <button
+                      className="btn btn--secondary btn--sm"
+                      onClick={() => setIsRevisionMode(true)}
+                    >
+                      Revise Marked Submission
+                    </button>
+                  )}
+                </div>
                 {draftData?.emailSent && draftData?.feedback && (
                   <div className="feedback-box">
                     <div className="feedback-box__label">Feedback</div>
@@ -589,11 +708,6 @@ export default function SubmissionPage() {
                   </div>
                 )}
 
-                {!isClosed && (
-                  <button className="btn btn--secondary btn--sm" style={{ marginTop: 16 }} onClick={() => setIsRevisionMode(true)}>
-                    Submit a revision
-                  </button>
-                )}
               </div>
             )}
 
@@ -753,8 +867,7 @@ export default function SubmissionPage() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3 className="modal-title">Submit this assignment?</h3>
             <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: '8px 0 0' }}>
-              Once submitted, you won't be able to edit until Mr. McRae opens it for revision.
-              Your submission will be included in the feedback email when it's marked.
+              You can still edit your submission until the assignment is closed. Once it's closed, your work will be marked as-is.
             </p>
             <div className="modal-footer" style={{ marginTop: 20 }}>
               <button className="btn btn--secondary btn--sm" onClick={() => setShowConfirm(false)}>Cancel</button>

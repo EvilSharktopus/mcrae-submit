@@ -68,6 +68,14 @@ export default function Dashboard() {
     setAssignments(prev => prev.map(x => x.id === a.id ? { ...x, isOpen: !(a.isOpen !== false) } : x));
   };
 
+  const closeAll = async () => {
+    const open = assignments.filter(a => a.isOpen !== false && !a.archived);
+    if (open.length === 0) { alert('No open assignments to close.'); return; }
+    if (!window.confirm(`Close all ${open.length} open assignment(s) now?`)) return;
+    await Promise.all(open.map(a => updateDoc(doc(db, 'assignments', a.id), { isOpen: false })));
+    setAssignments(prev => prev.map(a => open.find(o => o.id === a.id) ? { ...a, isOpen: false } : a));
+  };
+
   const handleExport = (asn, subs) => {
     const rubric   = rubrics.find(r => r.id === asn.rubricId);
     const catNames = rubric?.categories?.map(c => c.name) || [];
@@ -103,6 +111,44 @@ export default function Dashboard() {
     });
 
     exportCSV(`${asn.name.replace(/\s+/g, '_')}_grades.csv`, headers, rows);
+  };
+
+  const handleExportAiAccuracy = (asn, subs) => {
+    const rubric   = rubrics.find(r => r.id === asn.rubricId);
+    const cats     = rubric?.categories || [];
+
+    // Only include submissions that have BOTH ai draft and final selections
+    const comparable = subs.filter(s => s.aiDraftSelections && s.finalSelections);
+    if (comparable.length === 0) {
+      alert('No submissions with both AI draft and final marks yet.');
+      return;
+    }
+
+    const headers = ['Student', 'Email', 'Category', 'AI Label', 'AI Score', 'Teacher Label', 'Teacher Score', 'Exact Match', 'Point Diff'];
+    const rows = [];
+
+    comparable.forEach(s => {
+      cats.forEach((cat, i) => {
+        const ai  = s.aiDraftSelections[i];
+        const fin = s.finalSelections[i];
+        if (!ai && !fin) return;
+        const aiLabel    = ai?.label  ?? '—';
+        const aiScore    = ai?.points ?? '';
+        const finLabel   = fin?.label ?? '—';
+        const finScore   = fin?.points ?? '';
+        const match      = ai?.descriptorIndex === fin?.descriptorIndex ? 'Y' : 'N';
+        const diff       = (fin?.points != null && ai?.points != null) ? fin.points - ai.points : '';
+        rows.push([s.studentName, s.studentEmail, cat.name, aiLabel, aiScore, finLabel, finScore, match, diff]);
+      });
+    });
+
+    // Summary row
+    const totalRows   = rows.length;
+    const exactMatch  = rows.filter(r => r[7] === 'Y').length;
+    rows.push([]);
+    rows.push(['SUMMARY', '', `${comparable.length} submissions`, '', '', '', '', `${exactMatch}/${totalRows} exact (${Math.round(exactMatch/totalRows*100)}%)`, '']);
+
+    exportCSV(`${asn.name.replace(/\s+/g, '_')}_ai_accuracy.csv`, headers, rows);
   };
 
   if (loading) return <div className="loading-screen"><span className="spinner" /></div>;
@@ -177,6 +223,13 @@ export default function Dashboard() {
             onClick={() => handleExport(selectedAssignment, assignmentSubs)}
           >
             ↓ Export CSV
+          </button>
+          <button
+            className="btn btn--secondary btn--sm"
+            title="Compare AI draft marks vs your final marks"
+            onClick={() => handleExportAiAccuracy(selectedAssignment, assignmentSubs)}
+          >
+            🤖 AI Accuracy
           </button>
           <div style={{ display: 'flex', gap: 20 }}>
             <div className="detail-stat">
@@ -270,7 +323,16 @@ export default function Dashboard() {
 
   return (
     <div style={{ padding: '24px' }}>
-      <h1 className="page-title" style={{ marginBottom: 24 }}>Assignments</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+        <h1 className="page-title" style={{ margin: 0, flex: 1 }}>Assignments</h1>
+        <button
+          className="btn btn--secondary btn--sm"
+          onClick={closeAll}
+          style={{ background: 'rgba(255,80,80,0.12)', borderColor: 'rgba(255,80,80,0.4)', color: 'var(--text)' }}
+        >
+          🔒 Close All
+        </button>
+      </div>
       {groupKeys.length === 0 ? (
         <div className="empty"><span className="empty__icon">📋</span><p>No assignments yet. Add one in Setup.</p></div>
       ) : (

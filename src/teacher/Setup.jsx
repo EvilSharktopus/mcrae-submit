@@ -396,50 +396,24 @@ const selStyle = { fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1
 
 function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
   const [copyOpen,     setCopyOpen]     = useState(false);
-  const [schedOpen,    setSchedOpen]    = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [tgtCourse,    setTgtCourse]    = useState(COURSES[0]);
   const [tgtStream,    setTgtStream]    = useState('-1');
   const [copying,      setCopying]      = useState(false);
-  const [savingSched,  setSavingSched]  = useState(false);
+  const [saving,       setSaving]       = useState(false);
 
-  // Local schedule state — initialise from Firestore values
+  // Convert Firestore Timestamp, JS Date, or datetime-local string → input value
   const toInputVal = (ts) => {
     if (!ts) return '';
-    // Firestore Timestamp → Date, or already a string
     const d = ts.toDate ? ts.toDate() : new Date(ts);
     if (isNaN(d)) return '';
-    // datetime-local needs "YYYY-MM-DDTHH:mm"
     const pad = n => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
-  const [openAtVal,  setOpenAtVal]  = useState(() => toInputVal(a.openAt));
-  const [closeAtVal, setCloseAtVal] = useState(() => toInputVal(a.closeAt));
+  const [openAt,  setOpenAt]  = useState(() => toInputVal(a.openAt));
+  const [closeAt, setCloseAt] = useState(() => toInputVal(a.closeAt));
 
   const hasSchedule = !!(a.openAt || a.closeAt);
-
-  const handleSaveSchedule = async () => {
-    setSavingSched(true);
-    try {
-      const update = {
-        openAt:  openAtVal  ? new Date(openAtVal)  : null,
-        closeAt: closeAtVal ? new Date(closeAtVal) : null,
-      };
-      await updateDoc(doc(db, 'assignments', a.id), update);
-      onUpdate?.(a.id, update);
-      setSchedOpen(false);
-    } finally { setSavingSched(false); }
-  };
-
-  const handleClearSchedule = async () => {
-    setSavingSched(true);
-    try {
-      await updateDoc(doc(db, 'assignments', a.id), { openAt: null, closeAt: null });
-      onUpdate?.(a.id, { openAt: null, closeAt: null });
-      setOpenAtVal('');
-      setCloseAtVal('');
-      setSchedOpen(false);
-    } finally { setSavingSched(false); }
-  };
 
   const handleCopy = async () => {
     setCopying(true);
@@ -509,26 +483,76 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
           ))}
         </select>
 
-        <button className="btn btn--secondary btn--sm" onClick={() => { setCopyOpen(o => !o); setSchedOpen(false); }}>
+        <button className="btn btn--secondary btn--sm" onClick={() => { setCopyOpen(o => !o); setScheduleOpen(false); }}>
           {copyOpen ? '✕' : 'Copy to…'}
         </button>
         <button
-          className={`btn btn--sm ${hasSchedule ? 'btn--primary' : 'btn--secondary'}`}
-          onClick={() => { setSchedOpen(o => !o); setCopyOpen(false); }}
-          title="Set open/close schedule"
+          className="btn btn--secondary btn--sm"
+          onClick={() => { setScheduleOpen(o => !o); setCopyOpen(false); }}
+          style={hasSchedule ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
+          title="Schedule open/close times"
         >
-          {schedOpen ? '✕' : hasSchedule ? '⏱ Scheduled' : '⏱ Schedule'}
+          {scheduleOpen ? '✕' : (hasSchedule ? '⏱ Scheduled' : '⏱ Schedule')}
         </button>
-        {!copyOpen && !schedOpen && (
-          <button className="btn btn--secondary btn--sm" onClick={async () => {
-            if (!window.confirm(`Archive "${a.name}"?`)) return;
-            await updateDoc(doc(db, 'assignments', a.id), { archived: true });
-            onDelete?.();
-          }}>
-            Archive
-          </button>
-        )}
+        <button className="btn btn--secondary btn--sm" onClick={async () => {
+          if (!window.confirm(`Archive "${a.name}"?`)) return;
+          await updateDoc(doc(db, 'assignments', a.id), { archived: true });
+          onDelete?.();
+        }}>
+          Archive
+        </button>
       </div>
+
+      {/* Schedule panel */}
+      {scheduleOpen && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px 12px', background: 'var(--bg-input)', flexWrap: 'wrap', borderTop: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-dim)', minWidth: 60 }}>Opens:</span>
+          <input
+            type="datetime-local"
+            value={openAt}
+            onChange={e => setOpenAt(e.target.value)}
+            style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)' }}
+          />
+          <span style={{ fontSize: 12, color: 'var(--text-dim)', minWidth: 60 }}>Closes:</span>
+          <input
+            type="datetime-local"
+            value={closeAt}
+            onChange={e => setCloseAt(e.target.value)}
+            style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)' }}
+          />
+          <button
+            className="btn btn--primary btn--sm"
+            disabled={saving}
+            onClick={async () => {
+              setSaving(true);
+              try {
+                const patch = { openAt: openAt || null, closeAt: closeAt || null };
+                await updateDoc(doc(db, 'assignments', a.id), patch);
+                onUpdate?.(a.id, patch);
+                setScheduleOpen(false);
+              } finally { setSaving(false); }
+            }}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button
+            className="btn btn--secondary btn--sm"
+            disabled={saving}
+            onClick={async () => {
+              setSaving(true);
+              try {
+                const patch = { openAt: null, closeAt: null };
+                await updateDoc(doc(db, 'assignments', a.id), patch);
+                onUpdate?.(a.id, patch);
+                setOpenAt(''); setCloseAt('');
+                setScheduleOpen(false);
+              } finally { setSaving(false); }
+            }}
+          >
+            Clear schedule
+          </button>
+        </div>
+      )}
 
       {/* Copy-to panel */}
       {copyOpen && (
@@ -546,37 +570,6 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
         </div>
       )}
 
-      {/* Schedule panel */}
-      {schedOpen && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px 12px 14px', background: 'var(--bg-input)', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>Opens:</span>
-            <input
-              type="datetime-local"
-              style={{ ...selStyle, fontSize: 12 }}
-              value={openAtVal}
-              onChange={e => setOpenAtVal(e.target.value)}
-            />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>Closes:</span>
-            <input
-              type="datetime-local"
-              style={{ ...selStyle, fontSize: 12 }}
-              value={closeAtVal}
-              onChange={e => setCloseAtVal(e.target.value)}
-            />
-          </div>
-          <button className="btn btn--primary btn--sm" onClick={handleSaveSchedule} disabled={savingSched}>
-            {savingSched ? 'Saving…' : 'Save'}
-          </button>
-          {hasSchedule && (
-            <button className="btn btn--secondary btn--sm" onClick={handleClearSchedule} disabled={savingSched}>
-              Clear schedule
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }
@@ -649,6 +642,11 @@ export default function Setup() {
   }
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    document.body.classList.add('hide-bg');
+    return () => document.body.classList.remove('hide-bg');
+  }, []);
 
   async function archiveSchoolYear() {
     const year = currentSchoolYear();

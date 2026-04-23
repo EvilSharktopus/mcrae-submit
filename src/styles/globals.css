@@ -53,6 +53,7 @@ body::before {
   opacity: 0.18;
   pointer-events: none;
 }
+body.hide-bg::before { display: none; }
 
 /* Nav */
 .app-nav {

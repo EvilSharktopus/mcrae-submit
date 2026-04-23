@@ -8,9 +8,10 @@ service cloud.firestore {
       allow write: if request.auth.token.email == 'amcrae@rvschools.ab.ca';
     }
 
-    // Rubrics — only teacher can read/write
+    // Rubrics — teacher writes; any authenticated student can read
     match /rubrics/{id} {
-      allow read, write: if request.auth.token.email == 'amcrae@rvschools.ab.ca';
+      allow read:  if request.auth != null;
+      allow write: if request.auth.token.email == 'amcrae@rvschools.ab.ca';
     }
 
     // Submissions — student can create/update their own, teacher can read/update all
@@ -30,10 +31,13 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
-    // Help requests — students create, teacher reads/resolves
+    // Help requests — students create, read, and dismiss their own; teacher reads/resolves all
     match /help_requests/{id} {
       allow create: if request.auth != null;
-      allow read, update: if request.auth.token.email == 'amcrae@rvschools.ab.ca';
+      allow read: if request.auth.token.email == 'amcrae@rvschools.ab.ca'
+        || resource.data.studentEmail == request.auth.token.email;
+      allow update: if request.auth.token.email == 'amcrae@rvschools.ab.ca'
+        || resource.data.studentEmail == request.auth.token.email;
     }
 
     // Sections — any authenticated user can read (students pick their class)

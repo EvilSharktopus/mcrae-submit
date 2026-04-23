@@ -30,6 +30,9 @@ Paste and drag-and-drop functionality in the text editor is intentionally disabl
 ### No Guarantee of Availability
 This application is provided as a convenience tool. Mr. McRae is not liable for assignment loss due to technical failure. Students are encouraged to retain copies of completed work.
 
+### Parental Consent
+Student access to this application must be supported by written consent from a parent or guardian.
+
 _Last updated: April 2026_
 `;
 
@@ -71,8 +74,8 @@ All student data is stored in Canada.
 ### Data Retention
 Data is retained for the current school year and may be archived by Mr. McRae. You may request access to or deletion of your data by emailing amcrae@rvschools.ab.ca.
 
-### FOIP Rights (Alberta)
-Under Alberta's Freedom of Information and Protection of Privacy Act, you have the right to request access to or correction of your information. Contact Mr. McRae or Rocky View Schools' FOIP Coordinator (403-945-4000).
+### POPA Rights (Alberta)
+Under Alberta's Protection of Privacy Act (POPA), you have the right to request access to or correction of your information. Contact Mr. McRae or Rocky View Schools' Privacy Officer (403-945-4000).
 
 _Last updated: April 2026_
 `;
@@ -183,7 +186,9 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1 className="login-title">McRae Submit</h1>
+        <div style={{textAlign:'center', marginBottom:'8px'}}>
+          <img src="/mcrae-marks.png" alt="McRae Marks" style={{height:'56px', width:'auto'}} />
+        </div>
         <p className="login-subtitle">
           {view === VIEWS.signin ? 'Sign in to submit or review assignments'
            : view === VIEWS.signup ? 'Create your student account'
@@ -224,7 +229,7 @@ export default function LoginPage() {
             </div>
             {error && <p className="login-error">{error}</p>}
             <button className="login-btn" type="submit" disabled={loading}>
-              {loading ? 'Signing inâ€¦' : 'Sign In'}
+              {loading ? 'Signing in…' : 'Sign In'}
             </button>
             <div className="login-links">
               <button type="button" className="login-link" onClick={() => clearForm(VIEWS.reset)}>
@@ -269,10 +274,10 @@ export default function LoginPage() {
             />
             {error && <p className="login-error">{error}</p>}
             <button className="login-btn" type="submit" disabled={loading}>
-              {loading ? 'Creating accountâ€¦' : 'Create Account'}
+              {loading ? 'Creating account…' : 'Create Account'}
             </button>
             <button type="button" className="login-link" onClick={() => clearForm(VIEWS.signin)}>
-              â† Back to sign in
+              â†  Back to sign in
             </button>
           </form>
         )}
@@ -295,12 +300,12 @@ export default function LoginPage() {
                 />
                 {error && <p className="login-error">{error}</p>}
                 <button className="login-btn" type="submit" disabled={loading}>
-                  {loading ? 'Sendingâ€¦' : 'Send Reset Link'}
+                  {loading ? 'Sending…' : 'Send Reset Link'}
                 </button>
               </>
             )}
             <button type="button" className="login-link" onClick={() => clearForm(VIEWS.signin)}>
-              â† Back to sign in
+              â†  Back to sign in
             </button>
           </form>
         )}
@@ -317,7 +322,9 @@ export default function LoginPage() {
 
       {/* Bottom-centre logo */}
       <div className="login-page-logo">
-        <img src="/logo.png" alt="McRae Social" className="login-page-logo__img" />
+        <a href="https://mcraesocial.com" target="_blank" rel="noreferrer">
+          <img src="/logo.png" alt="McRae Social" className="login-page-logo__img" />
+        </a>
       </div>
     </div>
   );

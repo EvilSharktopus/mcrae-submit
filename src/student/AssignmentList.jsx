@@ -4,13 +4,23 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
+import { isPastCutoff, CUTOFF_HOUR, CUTOFF_MIN } from '../utils/cutoff';
 
 export default function AssignmentList({ section }) {
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState({});
   const [loading,     setLoading]     = useState(true);
+  const [wasCutoff,   setWasCutoff]   = useState(false);
   const { user } = useAuth();
   const navigate  = useNavigate();
+
+  // Show banner if kicked out by cutoff timer
+  useEffect(() => {
+    if (sessionStorage.getItem('cutoffKickout')) {
+      sessionStorage.removeItem('cutoffKickout');
+      setWasCutoff(true);
+    }
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -34,15 +44,21 @@ export default function AssignmentList({ section }) {
             if (a.isOpen === false) return false;
             if (a.course !== section.course) return false;
             if (aStream && sStream && aStream !== sStream) return false;
-            // Schedule enforcement
-            if (a.openAt) {
-              const openMs = a.openAt.toDate ? a.openAt.toDate().getTime() : new Date(a.openAt).getTime();
-              if (now < openMs) return false; // not open yet
-            }
-            if (a.closeAt) {
-              const closeMs = a.closeAt.toDate ? a.closeAt.toDate().getTime() : new Date(a.closeAt).getTime();
-              if (now > closeMs) return false; // already closed
-            }
+            // Schedule enforcement — handles Firestore Timestamps, JS Dates, and datetime-local strings
+            const toMs = (v) => {
+              if (!v) return null;
+              if (v.toDate) return v.toDate().getTime();       // Firestore Timestamp
+              const d = new Date(v);
+              if (!isNaN(d)) return d.getTime();
+              return new Date(String(v).replace('T', ' ')).getTime(); // datetime-local fallback
+            };
+            const openMs  = toMs(a.openAt);
+            const closeMs = toMs(a.closeAt);
+            const isTimed = !!(a.openAt || a.closeAt);
+            if (openMs  && now < openMs)  return false; // not open yet
+            if (closeMs && now > closeMs) return false; // already closed
+            // Non-timed assignments still respect the daily cutoff
+            if (!isTimed && isPastCutoff()) return false;
             return true;
           });
         }
@@ -64,6 +80,20 @@ export default function AssignmentList({ section }) {
   return (
     <div className="page">
       <h1 className="page-title">Assignments</h1>
+
+      {/* Cutoff banner */}
+      {wasCutoff && (
+        <div style={{ background: 'rgba(255,180,0,0.12)', border: '1px solid rgba(255,180,0,0.4)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 14, color: 'var(--text)' }}>
+          ⏰ <strong>Time's up!</strong> It's past {CUTOFF_HOUR}:{String(CUTOFF_MIN).padStart(2,'0')} — your work was automatically saved before the assignment closed.
+        </div>
+      )}
+
+      {isPastCutoff() && (
+        <div style={{ background: 'rgba(255,100,100,0.10)', border: '1px solid rgba(255,100,100,0.3)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 14, color: 'var(--text)' }}>
+          🔒 Submissions are closed for today ({CUTOFF_HOUR}:{String(CUTOFF_MIN).padStart(2,'0')} cutoff).
+        </div>
+      )}
+
       {section && (
         <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 20, marginTop: -8 }}>
           {section.displayName}

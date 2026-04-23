@@ -173,14 +173,18 @@ exports.sendMark = onCall({ secrets: [RESEND_API_KEY] }, async (request) => {
 
   // ── Send via Resend ───────────────────────────────────────────────────────
   const { Resend } = require('resend');
-  const resend = new Resend(RESEND_API_KEY.value());
+  const apiKey = RESEND_API_KEY.value();
+  console.log(`[sendMark] Using API key prefix: ${apiKey?.slice(0, 10)}... to: ${studentEmail}`);
+  const resend = new Resend(apiKey);
 
-  const { error } = await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: 'McRae Social Studies <marks@mcraesocial.com>',
     to:   studentEmail,
     subject: `Your mark for ${assignmentName}`,
     html,
   });
+
+  console.log(`[sendMark] Resend response — data: ${JSON.stringify(data)}, error: ${JSON.stringify(error)}`);
 
   if (error) {
     console.error('Resend error:', error);
@@ -192,6 +196,7 @@ exports.sendMark = onCall({ secrets: [RESEND_API_KEY] }, async (request) => {
     emailSent: true,
   });
 
+  console.log(`[sendMark] Success — email sent to ${studentEmail}, id: ${data?.id}`);
   return { success: true };
 });
 
