@@ -41,7 +41,6 @@ export default function AssignmentList({ section }) {
           all = all.filter(a => {
             const aStream = norm(a.stream);
             if (a.archived) return false;
-            if (a.isOpen === false) return false;
             if (a.course !== section.course) return false;
             if (aStream && sStream && aStream !== sStream) return false;
             // Schedule enforcement — handles Firestore Timestamps, JS Dates, and datetime-local strings
@@ -55,10 +54,15 @@ export default function AssignmentList({ section }) {
             const openMs  = toMs(a.openAt);
             const closeMs = toMs(a.closeAt);
             const isTimed = !!(a.openAt || a.closeAt);
-            if (openMs  && now < openMs)  return false; // not open yet
-            if (closeMs && now > closeMs) return false; // already closed
-            // Non-timed assignments still respect the daily cutoff
-            if (!isTimed && isPastCutoff()) return false;
+            if (isTimed) {
+              // Schedule controls visibility — manual isOpen flag is ignored
+              if (openMs  && now < openMs)  return false; // not open yet
+              if (closeMs && now > closeMs) return false; // already closed
+              return true;
+            }
+            // Non-timed: respect the manual isOpen toggle and daily cutoff
+            if (a.isOpen === false) return false;
+            if (isPastCutoff()) return false;
             return true;
           });
         }
