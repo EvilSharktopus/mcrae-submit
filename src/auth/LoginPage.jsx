@@ -186,7 +186,9 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1 className="login-title">McRae Submit</h1>
+        <div style={{textAlign:'center', marginBottom:'8px'}}>
+          <img src="/logo.png" alt="McRae Marks" style={{height:'56px', width:'auto'}} />
+        </div>
         <p className="login-subtitle">
           {view === VIEWS.signin ? 'Sign in to submit or review assignments'
            : view === VIEWS.signup ? 'Create your student account'
@@ -320,7 +322,9 @@ export default function LoginPage() {
 
       {/* Bottom-centre logo */}
       <div className="login-page-logo">
-        <img src="/logo.png" alt="McRae Social" className="login-page-logo__img" />
+        <a href="https://mcraesocial.com" target="_blank" rel="noreferrer">
+          <img src="/logo.png" alt="McRae Social" className="login-page-logo__img" />
+        </a>
       </div>
     </div>
   );

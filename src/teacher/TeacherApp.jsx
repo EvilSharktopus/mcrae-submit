@@ -23,7 +23,9 @@ export default function TeacherApp() {
   return (
     <>
       <nav className="app-nav">
-        <span className="app-nav__brand">McRae Submit</span>
+        <a href="https://submit.mcraesocial.com" className="app-nav__brand" style={{display:'flex',alignItems:'center'}}>
+          <img src="/logo.png" alt="McRae Marks" style={{height:'36px', width:'auto', display:'block'}} />
+        </a>
         <div className="app-nav__right">
           <div className="app-nav__tabs">
             <button className={`app-nav__tab ${tab === 'dashboard' ? 'active' : ''}`} onClick={() => setTab('dashboard')}>
