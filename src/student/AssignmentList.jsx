@@ -39,9 +39,13 @@ export default function AssignmentList({ section }) {
           const sStream = norm(section.stream);
           all = all.filter(a => {
             const aStream = norm(a.stream);
+            const now2 = Date.now();
+            const afterOpen2  = !a.openAt  || now2 >= new Date(a.openAt).getTime();
+            const beforeClose2 = !a.closeAt || now2 <= new Date(a.closeAt).getTime();
             return !a.archived &&
               a.isOpen !== false &&
               !isPastCutoff() &&
+              afterOpen2 && beforeClose2 &&
               a.course === section.course &&
               (!aStream || !sStream || aStream === sStream);
           });
