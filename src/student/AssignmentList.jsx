@@ -4,13 +4,23 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
+import { isPastCutoff, CUTOFF_HOUR, CUTOFF_MIN } from '../utils/cutoff';
 
 export default function AssignmentList({ section }) {
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState({});
   const [loading,     setLoading]     = useState(true);
+  const [wasCutoff,   setWasCutoff]   = useState(false);
   const { user } = useAuth();
   const navigate  = useNavigate();
+
+  // Show banner if kicked out by cutoff timer
+  useEffect(() => {
+    if (sessionStorage.getItem('cutoffKickout')) {
+      sessionStorage.removeItem('cutoffKickout');
+      setWasCutoff(true);
+    }
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -31,6 +41,7 @@ export default function AssignmentList({ section }) {
             const aStream = norm(a.stream);
             return !a.archived &&
               a.isOpen !== false &&
+              !isPastCutoff() &&
               a.course === section.course &&
               (!aStream || !sStream || aStream === sStream);
           });
@@ -53,6 +64,20 @@ export default function AssignmentList({ section }) {
   return (
     <div className="page">
       <h1 className="page-title">Assignments</h1>
+
+      {/* Cutoff banner */}
+      {wasCutoff && (
+        <div style={{ background: 'rgba(255,180,0,0.12)', border: '1px solid rgba(255,180,0,0.4)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 14, color: 'var(--text)' }}>
+          ⏰ <strong>Time's up!</strong> It's past {CUTOFF_HOUR}:{String(CUTOFF_MIN).padStart(2,'0')} — your work was automatically saved before the assignment closed.
+        </div>
+      )}
+
+      {isPastCutoff() && (
+        <div style={{ background: 'rgba(255,100,100,0.10)', border: '1px solid rgba(255,100,100,0.3)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 14, color: 'var(--text)' }}>
+          🔒 Submissions are closed for today ({CUTOFF_HOUR}:{String(CUTOFF_MIN).padStart(2,'0')} cutoff).
+        </div>
+      )}
+
       {section && (
         <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 20, marginTop: -8 }}>
           {section.displayName}

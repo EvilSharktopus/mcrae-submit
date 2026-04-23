@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../auth/ThemeContext';
 import DOMPurify from 'dompurify';
+import { isPastCutoff, msUntilCutoff } from '../utils/cutoff';
 import '../styles/submission.css';
 
 // Convert a Google Docs URL to the /preview embed URL
@@ -250,6 +251,23 @@ export default function SubmissionPage() {
     }, 5000);
   }, [assignmentId, user.email]);
 
+  // ── Immediate save (no debounce) — used by cutoff kickout ─────────────────
+  const saveNow = useCallback(async () => {
+    if (!editorRef.current) return;
+    clearTimeout(saveTimer.current);
+    const html  = editorRef.current.innerHTML;
+    const plain = editorRef.current.innerText || '';
+    const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
+    try {
+      await setDoc(docRef, {
+        response: html, plainResponse: plain.trim(), wordCount: wc,
+        lastSaved: serverTimestamp(),
+      }, { merge: true });
+      setSaveStatus('saved');
+      setLastSaved(new Date());
+    } catch (err) { console.error('Force save failed:', err); }
+  }, [assignmentId, user.email]);
+
   const handleKeyDown = (e) => {
     if (e.key === 'Tab') {
       e.preventDefault();
@@ -462,6 +480,19 @@ export default function SubmissionPage() {
     } finally { setAskSending(false); }
   };
 
+  // ── Kick students out at cutoff — save first ─────────────────────────────
+  useEffect(() => {
+    if (loading) return;
+    const ms = msUntilCutoff();
+    if (ms <= 0) return; // already past cutoff — render block handles it
+    const id = setTimeout(async () => {
+      await saveNow();
+      sessionStorage.setItem('cutoffKickout', '1');
+      navigate('/', { replace: true });
+    }, ms);
+    return () => clearTimeout(id);
+  }, [loading]);
+
   // ── Update relative time every 10s ───────────────────────────────────────
   const [, forceUpdate] = useState(0);
   useEffect(() => {
@@ -471,7 +502,7 @@ export default function SubmissionPage() {
 
   if (loading) return <div className="loading-screen"><span className="spinner" /></div>;
 
-  const isClosed   = assignment.isOpen === false;
+  const isClosed   = assignment.isOpen === false || isPastCutoff();
   const isSubmitted = draftData?.submitted === true;
   const showSuccess = isSubmitted && !isRevisionMode;
   const showEditor  = !showSuccess;

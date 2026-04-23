@@ -68,6 +68,14 @@ export default function Dashboard() {
     setAssignments(prev => prev.map(x => x.id === a.id ? { ...x, isOpen: !(a.isOpen !== false) } : x));
   };
 
+  const closeAll = async () => {
+    const open = assignments.filter(a => a.isOpen !== false && !a.archived);
+    if (open.length === 0) { alert('No open assignments to close.'); return; }
+    if (!window.confirm(`Close all ${open.length} open assignment(s) now?`)) return;
+    await Promise.all(open.map(a => updateDoc(doc(db, 'assignments', a.id), { isOpen: false })));
+    setAssignments(prev => prev.map(a => open.find(o => o.id === a.id) ? { ...a, isOpen: false } : a));
+  };
+
   const handleExport = (asn, subs) => {
     const rubric   = rubrics.find(r => r.id === asn.rubricId);
     const catNames = rubric?.categories?.map(c => c.name) || [];
@@ -315,7 +323,16 @@ export default function Dashboard() {
 
   return (
     <div style={{ padding: '24px' }}>
-      <h1 className="page-title" style={{ marginBottom: 24 }}>Assignments</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
+        <h1 className="page-title" style={{ margin: 0, flex: 1 }}>Assignments</h1>
+        <button
+          className="btn btn--secondary btn--sm"
+          onClick={closeAll}
+          style={{ background: 'rgba(255,80,80,0.12)', borderColor: 'rgba(255,80,80,0.4)', color: 'var(--text)' }}
+        >
+          🔒 Close All
+        </button>
+      </div>
       {groupKeys.length === 0 ? (
         <div className="empty"><span className="empty__icon">📋</span><p>No assignments yet. Add one in Setup.</p></div>
       ) : (
