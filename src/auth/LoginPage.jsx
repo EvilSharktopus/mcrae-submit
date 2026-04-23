@@ -187,7 +187,7 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div style={{textAlign:'center', marginBottom:'8px'}}>
-          <img src="/logo.png" alt="McRae Marks" style={{height:'56px', width:'auto'}} />
+          <img src="/mcrae-marks.png" alt="McRae Marks" style={{height:'56px', width:'auto'}} />
         </div>
         <p className="login-subtitle">
           {view === VIEWS.signin ? 'Sign in to submit or review assignments'
