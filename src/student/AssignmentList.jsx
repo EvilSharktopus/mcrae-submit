@@ -40,11 +40,18 @@ export default function AssignmentList({ section }) {
           all = all.filter(a => {
             const aStream = norm(a.stream);
             const now2 = Date.now();
-            const afterOpen2  = !a.openAt  || now2 >= new Date(a.openAt).getTime();
-            const beforeClose2 = !a.closeAt || now2 <= new Date(a.closeAt).getTime();
+            // Parse datetime-local strings as local time (not UTC) by replacing 'T' separator
+            const parseLocal = (s) => s ? new Date(s.replace('T', ' ')).getTime() : null;
+            const openMs  = parseLocal(a.openAt);
+            const closeMs = parseLocal(a.closeAt);
+            const isTimed = !!(a.openAt || a.closeAt);
+            const afterOpen2   = !openMs  || now2 >= openMs;
+            const beforeClose2 = !closeMs || now2 <= closeMs;
+            // Timed assignments use their own window instead of the global cutoff
+            const cutoffOk = isTimed ? true : !isPastCutoff();
             return !a.archived &&
               a.isOpen !== false &&
-              !isPastCutoff() &&
+              cutoffOk &&
               afterOpen2 && beforeClose2 &&
               a.course === section.course &&
               (!aStream || !sStream || aStream === sStream);
