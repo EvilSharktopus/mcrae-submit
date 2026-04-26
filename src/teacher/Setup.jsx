@@ -410,8 +410,14 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
     const pad = n => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
-  const [openAt,  setOpenAt]  = useState(() => toInputVal(a.openAt));
-  const [closeAt, setCloseAt] = useState(() => toInputVal(a.closeAt));
+  // Returns current time + offsetMin minutes as a datetime-local string
+  const nowVal = (offsetMin = 0) => {
+    const d = new Date(Date.now() + offsetMin * 60000);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  const [openAt,  setOpenAt]  = useState(() => toInputVal(a.openAt)  || nowVal());
+  const [closeAt, setCloseAt] = useState(() => toInputVal(a.closeAt) || nowVal(1));
 
   const hasSchedule = !!(a.openAt || a.closeAt);
 

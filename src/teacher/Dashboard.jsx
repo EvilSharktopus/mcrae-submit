@@ -371,7 +371,18 @@ export default function Dashboard() {
                     const actualSubs = allDocs.filter(isActualSubmission);
                     const helps      = helpByAssignment[a.id] || [];
                     const unmarked   = actualSubs.filter(s => !s.emailSent && s.mark == null).length;
-                    const isOpen_    = a.isOpen !== false;
+                    const toMs = (v) => {
+                      if (!v) return null;
+                      if (v.toDate) return v.toDate().getTime();
+                      const d = new Date(v); return isNaN(d) ? null : d.getTime();
+                    };
+                    const now     = Date.now();
+                    const openMs  = toMs(a.openAt);
+                    const closeMs = toMs(a.closeAt);
+                    const isTimed = !!(a.openAt || a.closeAt);
+                    const isOpen_ = isTimed
+                      ? !(openMs && now < openMs) && !(closeMs && now > closeMs)
+                      : a.isOpen !== false;
 
                     return (
                       <div key={a.id} className={`acard ${!isOpen_ ? 'acard--closed' : ''}`}
