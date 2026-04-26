@@ -416,8 +416,8 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
     const pad = n => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
-  const [openAt,  setOpenAt]  = useState(() => toInputVal(a.openAt)  || nowVal());
-  const [closeAt, setCloseAt] = useState(() => toInputVal(a.closeAt) || nowVal(1));
+  const [openAt,  setOpenAt]  = useState(() => toInputVal(a.openAt));
+  const [closeAt, setCloseAt] = useState(() => toInputVal(a.closeAt));
 
   const hasSchedule = !!(a.openAt || a.closeAt);
 
@@ -494,7 +494,15 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
         </button>
         <button
           className="btn btn--secondary btn--sm"
-          onClick={() => { setScheduleOpen(o => !o); setCopyOpen(false); }}
+          onClick={() => {
+            if (!scheduleOpen) {
+              // Always refresh to current time when opening with no existing schedule
+              if (!a.openAt) setOpenAt(nowVal());
+              if (!a.closeAt) setCloseAt(nowVal(1));
+            }
+            setScheduleOpen(o => !o);
+            setCopyOpen(false);
+          }}
           style={hasSchedule ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
           title="Schedule open/close times"
         >
@@ -550,8 +558,10 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
                 const patch = { openAt: null, closeAt: null };
                 await updateDoc(doc(db, 'assignments', a.id), patch);
                 onUpdate?.(a.id, patch);
-                setOpenAt(''); setCloseAt('');
-                setScheduleOpen(false);
+                // Reset to now/+1min so panel is ready for a fresh schedule
+                setOpenAt(nowVal());
+                setCloseAt(nowVal(1));
+                // Keep panel open so teacher can immediately re-schedule
               } finally { setSaving(false); }
             }}
           >
