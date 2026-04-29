@@ -433,6 +433,8 @@ const selStyle = { fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1
 function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
   const [copyOpen,     setCopyOpen]     = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [restrictionsOpen, setRestrictionsOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
   const [tgtCourse,    setTgtCourse]    = useState(COURSES[0]);
   const [tgtStream,    setTgtStream]    = useState('-1');
   const [copying,      setCopying]      = useState(false);
@@ -480,9 +482,12 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
         <span style={{ flex: 1, minWidth: 140, fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
           {a.name}
           {a.restrictedEmails?.length > 0 && (
-            <span title="Restricted to specific students" style={{ fontSize: 11, background: 'rgba(255, 180, 0, 0.15)', color: '#b38000', padding: '2px 6px', borderRadius: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              🔒 Restricted
-            </span>
+            <button 
+              title="Manage Restrictions" 
+              onClick={() => { setRestrictionsOpen(o => !o); setScheduleOpen(false); setCopyOpen(false); }}
+              style={{ fontSize: 11, background: 'rgba(255, 180, 0, 0.15)', color: '#b38000', padding: '2px 8px', borderRadius: 12, display: 'inline-flex', alignItems: 'center', gap: 4, border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+              🔒 Restrictions
+            </button>
           )}
         </span>
 
@@ -545,6 +550,7 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
             }
             setScheduleOpen(o => !o);
             setCopyOpen(false);
+            setRestrictionsOpen(false);
           }}
           style={hasSchedule ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
           title="Schedule open/close times"
@@ -559,6 +565,59 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
           Archive
         </button>
       </div>
+
+      {/* Restrictions panel */}
+      {restrictionsOpen && (
+        <div style={{ padding: '12px 14px', background: 'rgba(255, 180, 0, 0.05)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#b38000', marginBottom: 8 }}>Restricted Students</div>
+            {a.restrictedEmails?.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {a.restrictedEmails.map(email => (
+                  <div key={email} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                    <span style={{ width: 220 }}>{email}</span>
+                    <button className="btn btn--secondary btn--sm" style={{ padding: '2px 8px', fontSize: 11, color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={async () => {
+                      const newEmails = a.restrictedEmails.filter(e => e !== email);
+                      await updateDoc(doc(db, 'assignments', a.id), { restrictedEmails: newEmails });
+                      onUpdate?.(a.id, { restrictedEmails: newEmails });
+                    }}>Remove</button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>No students restricted yet. Add an email to restrict this assignment.</div>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input 
+              type="email" 
+              placeholder="student@example.com" 
+              value={newEmail} 
+              onChange={e => setNewEmail(e.target.value)} 
+              style={{ padding: '4px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, width: 220, background: 'var(--bg-input)', color: 'var(--text)' }} 
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter' && newEmail.trim()) {
+                  const currentEmails = a.restrictedEmails || [];
+                  if (currentEmails.includes(newEmail.trim())) return;
+                  const newEmails = [...currentEmails, newEmail.trim()];
+                  await updateDoc(doc(db, 'assignments', a.id), { restrictedEmails: newEmails });
+                  onUpdate?.(a.id, { restrictedEmails: newEmails });
+                  setNewEmail('');
+                }
+              }} 
+            />
+            <button className="btn btn--primary btn--sm" onClick={async () => {
+              if (!newEmail.trim()) return;
+              const currentEmails = a.restrictedEmails || [];
+              if (currentEmails.includes(newEmail.trim())) return;
+              const newEmails = [...currentEmails, newEmail.trim()];
+              await updateDoc(doc(db, 'assignments', a.id), { restrictedEmails: newEmails });
+              onUpdate?.(a.id, { restrictedEmails: newEmails });
+              setNewEmail('');
+            }}>Add Student</button>
+          </div>
+        </div>
+      )}
 
       {/* Schedule panel */}
       {scheduleOpen && (
