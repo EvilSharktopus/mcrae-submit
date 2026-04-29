@@ -7,7 +7,8 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useNavigate, useMatch } from 'react-router-dom';
 import AssignmentList from './AssignmentList';
 import SubmissionPage from './SubmissionPage';
-import SectionPicker  from './SectionPicker';
+import DebatePage from './DebatePage';
+import SectionPicker from './SectionPicker';
 import MarkedList     from './MarkedList';
 import MarkedDetail   from './MarkedDetail';
 import JigsawApp      from './jigsaw/JigsawApp';
@@ -151,6 +152,7 @@ export default function StudentApp() {
           <Routes>
             <Route path="/"                      element={<AssignmentList section={enrollment} jigsawActive={jigsawActive} />} />
             <Route path="/submit/:assignmentId"  element={<SubmissionPage />} />
+            <Route path="/debate/:assignmentId"  element={<DebatePage />} />
             <Route path="/marked"                element={<MarkedList />} />
             <Route path="/marked/:submissionId"  element={<MarkedDetail />} />
             {jigsawActive && <Route path="/jigsaw/*" element={<JigsawApp />} />}

@@ -312,3 +312,30 @@ Be fair but rigorous. Match the quality of the writing to the descriptor that be
     throw new HttpsError('internal', `AI marking failed: ${detail}`);
   }
 });
+
+exports.debateGeminiRebuttal = onCall({ secrets: [GEMINI_API_KEY], timeoutSeconds: 60 }, async (request) => {
+  // Can be called by student or teacher
+  const { systemContext, prompt } = request.data;
+  if (!prompt || !systemContext) {
+    throw new HttpsError('invalid-argument', 'Missing prompt or systemContext.');
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY.value() });
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: systemContext + '\n\n' + prompt }
+        ]
+      }]
+    });
+
+    return { text: response.text };
+  } catch (err) {
+    console.error('Debate AI Error:', err);
+    throw new HttpsError('internal', 'Failed to generate response.', err.message);
+  }
+});

@@ -165,7 +165,7 @@ function RubricBuilder({ onSaved }) {
 // ── Assignment Registration ─────────────────────────────────────────────────
 
 function AssignmentForm({ rubrics, onSaved }) {
-  const [form, setForm] = useState({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '', isRestricted: false, restrictedEmailsText: '' });
+  const [form, setForm] = useState({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '', isRestricted: false, restrictedEmailsText: '', type: 'standard' });
   const [saving, setSaving] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -183,7 +183,7 @@ function AssignmentForm({ rubrics, onSaved }) {
         docUrl: form.docUrl.trim(),
         restrictedEmails 
       });
-      setForm({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '', isRestricted: false, restrictedEmailsText: '' });
+      setForm({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '', isRestricted: false, restrictedEmailsText: '', type: 'standard' });
       onSaved?.();
     } finally { setSaving(false); }
   };
@@ -195,6 +195,13 @@ function AssignmentForm({ rubrics, onSaved }) {
         <div className="field">
           <label>Assignment Name</label>
           <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Position Paper" />
+        </div>
+        <div className="field">
+          <label>Type</label>
+          <select value={form.type} onChange={e => set('type', e.target.value)}>
+            <option value="standard">Standard Essay</option>
+            <option value="solo_debate">Solo Debate</option>
+          </select>
         </div>
         <div className="field">
           <label>Course</label>

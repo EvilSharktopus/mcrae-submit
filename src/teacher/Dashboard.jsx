@@ -6,6 +6,7 @@ import {
 } from 'firebase/firestore';
 import { exportCSV, stripHtml } from '../utils/exportUtils';
 import MarkingView from './MarkingView';
+import DebateAdmin from './DebateAdmin';
 import '../styles/dashboard.css';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -171,6 +172,20 @@ export default function Dashboard() {
     const currentIdx = students.findIndex(s => s.id === selectedSubmission.id);
     const prevSub    = currentIdx > 0 ? students[currentIdx - 1] : null;
     const nextSub    = currentIdx >= 0 && currentIdx < students.length - 1 ? students[currentIdx + 1] : null;
+
+    if (selectedAssignment?.type === 'solo_debate') {
+      return (
+        <DebateAdmin
+          submission={selectedSubmission}
+          assignment={selectedAssignment}
+          prevStudent={prevSub}
+          onPrevStudent={() => setSelectedSubmission(prevSub)}
+          nextStudent={nextSub}
+          onNextStudent={() => setSelectedSubmission(nextSub)}
+          onClose={() => { setView('detail'); loadData(); }}
+        />
+      );
+    }
 
     return (
       <MarkingView

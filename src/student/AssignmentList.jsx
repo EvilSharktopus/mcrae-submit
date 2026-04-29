@@ -142,7 +142,7 @@ export default function AssignmentList({ section, jigsawActive }) {
                 key={a.id}
                 className="card"
                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}
-                onClick={() => navigate(`/submit/${a.id}`)}
+                onClick={() => navigate(a.type === 'solo_debate' ? `/debate/${a.id}` : `/submit/${a.id}`)}
               >
                 <div>
                   <div style={{ fontWeight: 600, marginBottom: 3 }}>{a.name}</div>
