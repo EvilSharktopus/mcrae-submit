@@ -32,6 +32,8 @@ export default function Dashboard() {
   const [unmarkedOnly, setUnmarkedOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [openGroups, setOpenGroups] = useState({});
+  const [showAccessControl, setShowAccessControl] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
   const toggleGroup = key => setOpenGroups(p => ({ ...p, [key]: !p[key] }));
 
   async function loadData() {
@@ -246,6 +248,12 @@ export default function Dashboard() {
           >
             🤖 AI Accuracy
           </button>
+          <button
+            className="btn btn--secondary btn--sm"
+            onClick={() => setShowAccessControl(!showAccessControl)}
+          >
+            🔒 Control Access
+          </button>
           <div style={{ display: 'flex', gap: 20 }}>
             <div className="detail-stat">
               <span className="detail-stat__num">{accessedCount}</span>
@@ -257,6 +265,54 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {showAccessControl && (
+          <div style={{ padding: '16px 24px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
+            <h3 style={{ fontSize: 15, marginBottom: 12, fontWeight: 600 }}>Access Control</h3>
+            <div style={{ marginBottom: 16 }}>
+              {selectedAssignment.restrictedEmails?.length > 0 ? (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {selectedAssignment.restrictedEmails.map(email => (
+                    <li key={email} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, fontSize: 13 }}>
+                      <span style={{ width: 220 }}>{email}</span>
+                      <button className="btn btn--secondary btn--sm" style={{ padding: '2px 8px', fontSize: 11, color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={async () => {
+                        const newEmails = selectedAssignment.restrictedEmails.filter(e => e !== email);
+                        await updateDoc(doc(db, 'assignments', selectedAssignment.id), { restrictedEmails: newEmails });
+                        setSelectedAssignment({ ...selectedAssignment, restrictedEmails: newEmails });
+                      }}>Remove</button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ fontSize: 13, color: 'var(--text-dim)' }}>Assignment is open to all students in the assigned course (no restricted emails).</p>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input type="email" placeholder="student@example.com" value={newEmail} onChange={e => setNewEmail(e.target.value)} style={{ padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, width: 220, background: 'var(--bg-input)', color: 'var(--text)' }} onKeyDown={async (e) => {
+                if (e.key === 'Enter' && newEmail.trim()) {
+                  const currentEmails = selectedAssignment.restrictedEmails || [];
+                  if (currentEmails.includes(newEmail.trim())) return;
+                  const newEmails = [...currentEmails, newEmail.trim()];
+                  await updateDoc(doc(db, 'assignments', selectedAssignment.id), { restrictedEmails: newEmails });
+                  setSelectedAssignment({ ...selectedAssignment, restrictedEmails: newEmails });
+                  setNewEmail('');
+                }
+              }} />
+              <button className="btn btn--primary btn--sm" onClick={async () => {
+                if (!newEmail.trim()) return;
+                const currentEmails = selectedAssignment.restrictedEmails || [];
+                if (currentEmails.includes(newEmail.trim())) return;
+                const newEmails = [...currentEmails, newEmail.trim()];
+                await updateDoc(doc(db, 'assignments', selectedAssignment.id), { restrictedEmails: newEmails });
+                setSelectedAssignment({ ...selectedAssignment, restrictedEmails: newEmails });
+                setNewEmail('');
+              }}>Add Email</button>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 8 }}>
+              Note: Once at least one email is added, this assignment is completely hidden from all other students.
+            </div>
+          </div>
+        )}
 
         <div style={{ padding: '16px 24px 24px' }}>
           {students.length === 0 ? (
