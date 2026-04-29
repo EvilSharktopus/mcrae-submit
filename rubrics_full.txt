@@ -1,0 +1,293 @@
+
+=== RUBRIC ID: 3rGZ5nckQBvrdDeno4HK | name: Position Paper Rubric (-2 Streams) ===
+
+CATEGORY 0: Exploration and Analysis
+  [0] (no label) | 8 pts | "Exploration of the issue(s) is insightful and complete. Analysis is thoughtful and thorough and misconceptions, if present, do not detract from the response. There is a confident and perceptive understanding of various points of view and the assigned task."
+  [1] (no label) | 7.5 pts | "Exploration of the issue(s) is insightful and complete. Analysis is thoughtful and thorough and misconceptions, if present, do not detract from the response. There is a confident and perceptive understanding of various points of view and the assigned task."
+  [2] (no label) | 7 pts | "Exploration of the issue(s) is insightful and complete. Analysis is thoughtful and thorough and misconceptions, if present, do not detract from the response. There is a confident and perceptive understanding of various points of view and the assigned task."
+  [3] (no label) | 6.5 pts | "Exploration of the issue(s) is specific and accurate. Analysis is appropriate and purposeful but may contain minor misunderstandings. A clear understanding of various points of view and the assigned task."
+  [4] (no label) | 6 pts | "Exploration of the issue(s) is specific and accurate. Analysis is appropriate and purposeful but may contain minor misunderstandings. A clear understanding of various points of view and the assigned task."
+  [5] (no label) | 5.5 pts | "Exploration of the issue(s) is specific and accurate. Analysis is appropriate and purposeful but may contain minor misunderstandings. A clear understanding of various points of view and the assigned task."
+  [6] (no label) | 5 pts | "Exploration of the issue(s) is valid but general and may contain misunderstandings. Analysis is general and straightforward. An acceptable understanding of various points of view and the assigned task."
+  [7] (no label) | 4.5 pts | "Exploration of the issue(s) is valid but general and may contain misunderstandings. Analysis is general and straightforward. An acceptable understanding of various points of view and the assigned task."
+  [8] (no label) | 4 pts | "Exploration of the issue(s) is valid but general and may contain misunderstandings. Analysis is general and straightforward. An acceptable understanding of various points of view and the assigned task."
+  [9] (no label) | 3.5 pts | "Exploration of the issue(s) is vague and may contain large errors. Analysis is limited and over-generalized or repetitive, but somewhat visible. There is a minimal understanding of various points of view and the assigned task."
+  [10] (no label) | 3 pts | "Exploration of the issue(s) is vague and may contain large errors. Analysis is limited and over-generalized or repetitive, but somewhat visible. There is a minimal understanding of various points of view and the assigned task."
+  [11] (no label) | 2.5 pts | "Exploration of the issue(s) is vague and may contain large errors. Analysis is limited and over-generalized or repetitive, but somewhat visible. There is a minimal understanding of various points of view and the assigned task."
+  [12] (no label) | 2 pts | "Exploration of the issue(s) is wrong or unrelated. Analysis is minimal and/or tangential. There is a minimal understanding of various points of view and the assigned task."
+  [13] (no label) | 1.5 pts | "Exploration of the issue(s) is wrong or unrelated. Analysis is minimal and/or tangential. There is a minimal understanding of various points of view and the assigned task."
+  [14] (no label) | 1 pts | "Exploration of the issue(s) is wrong or unrelated. Analysis is minimal and/or tangential. There is a minimal understanding of various points of view and the assigned task."
+
+CATEGORY 1: Defense of Position
+  [0] (no label) | 8 pts | "The defense of position is based on one or more convincing, logical arguments. Evidence is specific and accurate and errors, if present, do not take away from the response. There is a confident and perceptive understanding of appropriate social knowledge and the assigned task."
+  [1] (no label) | 7.5 pts | "The defense of position is based on one or more convincing, logical arguments. Evidence is specific and accurate and errors, if present, do not take away from the response. There is a confident and perceptive understanding of appropriate social knowledge and the assigned task."
+  [2] (no label) | 7 pts | "The defense of position is based on one or more convincing, logical arguments. Evidence is specific and accurate and errors, if present, do not take away from the response. There is a confident and perceptive understanding of appropriate social knowledge and the assigned task."
+  [3] (no label) | 6.5 pts | "The defense of position is based on one or more sound arguments. Evidence is appropriate, but may contain some minor factual errors. There is a clear understanding of appropriate social knowledge and the assigned task."
+  [4] (no label) | 6 pts | "The defense of position is based on one or more sound arguments. Evidence is appropriate, but may contain some minor factual errors. There is a clear understanding of appropriate social knowledge and the assigned task."
+  [5] (no label) | 5.5 pts | "The defense of position is based on one or more sound arguments. Evidence is appropriate, but may contain some minor factual errors. There is a clear understanding of appropriate social knowledge and the assigned task."
+  [6] (no label) | 5 pts | "The defense of position is based on one or more acceptable arguments. Evidence is relevant, but general and/or incompletely developed. The evidence may contain errors. There is an acceptable understanding of appropriate social knowledge and the assigned task."
+  [7] (no label) | 4.5 pts | "The defense of position is based on one or more acceptable arguments. Evidence is relevant, but general and/or incompletely developed. The evidence may contain errors. There is an acceptable understanding of appropriate social knowledge and the assigned task."
+  [8] (no label) | 4 pts | "The defense of position is based on one or more acceptable arguments. Evidence is relevant, but general and/or incompletely developed. The evidence may contain errors. There is an acceptable understanding of appropriate social knowledge and the assigned task."
+  [9] (no label) | 3.5 pts | "The defense of position is based on oversimplified arguments and/or questionable logic. Evidence is superficial, may not always be relevant, and may contain large errors. There is a confused, yet visible, understanding of appropriate social knowledge and the assigned task."
+  [10] (no label) | 3 pts | "The defense of position is based on oversimplified arguments and/or questionable logic. Evidence is superficial, may not always be relevant, and may contain large errors. There is a confused, yet visible, understanding of appropriate social knowledge and the assigned task."
+  [11] (no label) | 2.5 pts | "The defense of position is based on oversimplified arguments and/or questionable logic. Evidence is superficial, may not always be relevant, and may contain large errors. There is a confused, yet visible, understanding of appropriate social knowledge and the assigned task."
+  [12] (no label) | 2 pts | "The defense of position taken is hard to understand and/or little to no attempt is made to defend it. Evidence, if present, is incomplete and/or barely appropriate with frequent large errors. There is minimal understanding of appropriate social knowledge and the assigned task."
+  [13] (no label) | 1.5 pts | "The defense of position taken is hard to understand and/or little to no attempt is made to defend it. Evidence, if present, is incomplete and/or barely appropriate with frequent large errors. There is minimal understanding of appropriate social knowledge and the assigned task."
+  [14] (no label) | 1 pts | "The defense of position taken is hard to understand and/or little to no attempt is made to defend it. Evidence, if present, is incomplete and/or barely appropriate with frequent large errors. There is minimal understanding of appropriate social knowledge and the assigned task."
+
+CATEGORY 2: Communication
+  [0] (no label) | 4 pts | "The writing is fluent and effectively organized. A convincing and engaging voice is used. Vocabulary is precise. The writing shows a confident control of sentence construction, grammar, and mechanics. Errors, if present, are unimportant."
+  [1] (no label) | 3 pts | "The writing is straightforward and clearly organized. A distinct voice is used. Vocabulary is specific. The writing shows effective control of sentence construction, grammar, and mechanics. Errors do not detract from communication."
+  [2] (no label) | 2 pts | "The writing is generally clear and functionally organized. Voice and vocabulary are adequate. The writing shows basic control of sentence construction, grammar, and mechanics. Errors do not seriously interfere with communication."
+  [3] (no label) | 1 pts | "The writing is uneven and incomplete but is somewhat organized. Voice is inappropriate and/or unconvincing. Vocabulary is imprecise and/or inappropriate. The writing shows an uncertain control of sentence construction, grammar, and mechanics. Errors reduce communication."
+  [4] (no label) | 0.5 pts | "The writing is unclear and disorganized. Voice is unsuitable and/or ineffective. Vocabulary is ineffective and frequently incorrect. A lack of control of sentence construction, grammar, and mechanics. Errors hurt communication."
+
+=== RUBRIC ID: 48k6pER4v0yErKTTszSS | name: Source Analysis Rubric — 30-1 (Liberalism) ===
+
+CATEGORY 0: Interpretation of Sources
+  [0] (no label) | 10 pts | "Interpretation of the source is sophisticated, insightful, and precise. Linkages to the principles of liberalism are accurate, perceptive, and comprehensively developed."
+  [1] (no label) | 9.5 pts | "Interpretation of the source is sophisticated, insightful, and precise. Linkages to the principles of liberalism are accurate, perceptive, and comprehensively developed."
+  [2] (no label) | 9 pts | "Interpretation of the source is sound, specific, and adept. Linkages to the principles of liberalism are consistent, logical, and capably developed."
+  [3] (no label) | 8 pts | "Interpretation of the source is sound, specific, and adept. Linkages to the principles of liberalism are consistent, logical, and capably developed."
+  [4] (no label) | 7 pts | "Interpretation of the source is adequate, straightforward, and conventional. Linkages to the principles of liberalism are relevant and developed in a generalized fashion."
+  [5] (no label) | 6 pts | "Interpretation of the source is adequate, straightforward, and conventional. Linkages to the principles of liberalism are relevant and developed in a generalized fashion."
+  [6] (no label) | 5 pts | "Interpretation of the source is adequate, straightforward, and conventional. Linkages to the principles of liberalism are relevant and developed in a generalized fashion."
+  [7] (no label) | 4 pts | "Interpretation of the source is confused, vague and/or simplistic. Linkages established to the principles of liberalism may be incomplete, superficial, and imprecise."
+  [8] (no label) | 3 pts | "Interpretation of the source is confused, vague and/or simplistic. Linkages established to the principles of liberalism may be incomplete, superficial, and imprecise."
+  [9] (no label) | 2 pts | "Interpretation of the source is minimal, inaccurate and/or copied from the source. Linkages to the principles of liberalism are disjointed, irrelevant, and demonstrate little/no understanding of the assigned task."
+  [10] (no label) | 1 pts | "Interpretation of the source is minimal, inaccurate and/or copied from the source. Linkages to the principles of liberalism are disjointed, irrelevant, and demonstrate little/no understanding of the assigned task."
+
+CATEGORY 1: Identification of Relationships
+  [0] (no label) | 15 pts | "Relationship(s) are accurately and perceptively identified. The explanation is thorough and comprehensive."
+  [1] (no label) | 14 pts | "Relationship(s) are accurately and perceptively identified. The explanation is thorough and comprehensive."
+  [2] (no label) | 13 pts | "Relationship(s) are clearly and capably identified. The explanation is appropriate and purposeful."
+  [3] (no label) | 12 pts | "Relationship(s) are clearly and capably identified. The explanation is appropriate and purposeful."
+  [4] (no label) | 11 pts | "Relationship(s) are clearly and capably identified. The explanation is appropriate and purposeful."
+  [5] (no label) | 10 pts | "Relationship(s) are generally and adequately identified. The explanation is straightforward and conventional."
+  [6] (no label) | 9 pts | "Relationship(s) are generally and adequately identified. The explanation is straightforward and conventional."
+  [7] (no label) | 8 pts | "Relationship(s) are generally and adequately identified. The explanation is straightforward and conventional."
+  [8] (no label) | 7 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [9] (no label) | 6 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [10] (no label) | 5 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [11] (no label) | 4 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [12] (no label) | 3 pts | "The identification of relationship(s) is minimal. The explanation is off topic and undeveloped."
+  [13] (no label) | 2 pts | "The identification of relationship(s) is minimal. The explanation is off topic and undeveloped."
+  [14] (no label) | 1 pts | "The identification of relationship(s) is minimal. The explanation is off topic and undeveloped."
+
+CATEGORY 2: Communication
+  [0] (no label) | 5 pts | "The writing is fluent, skillfully structured, and displays judicious use of terminology. Control of syntax, mechanics and grammar is Excellent. Vocabulary is precise and specific."
+  [1] (no label) | 4 pts | "The writing is coherent, clearly structured, and displays effective use of terminology. Control of syntax, mechanics and grammar is strong. Vocabulary is appropriate and specific."
+  [2] (no label) | 3 pts | "The writing is clear and conventionally structured. Vocabulary is conventional and generalized. There may be occasional lapses in control and minor errors; however, the communication remains generally clear."
+  [3] (no label) | 2 pts | "The writing is awkward and lacks organization. Control of syntax, mechanics and grammar is inconsistent. Vocabulary is imprecise, simplistic, and inappropriate. Errors obscure the clarity of communication."
+  [4] (no label) | 1 pts | "The writing is unclear and disorganized. Control of syntax, mechanics and grammar is lacking. Vocabulary is overgeneralized and inaccurate. Jarring errors impede communication."
+
+=== RUBRIC ID: CkjjzSIFvBYDqkuJVio3 | name: Position Paper Rubric ===
+
+CATEGORY 0: Analysis of Source
+  [0] (no label) | 6 pts | "The understanding of the source is insightful and sophisticated. A perceptive discussion of the source and its relationship(s) to the perspective(s) is/are comprehensively developed."
+  [1] (no label) | 5 pts | "The understanding of the source is sound and adept. A purposeful discussion of the source and its relationship(s) to perspective(s) is/are capably developed."
+  [2] (no label) | 4 pts | "The understanding of the source is straightforward and conventional. A generalized discussion of the source and its relationship(s) to the perspective(s) is/are adequately developed."
+  [3] (no label) | 3 pts | "(Lower satisfactory) The understanding of the source is straightforward and conventional but underdeveloped."
+  [4] (no label) | 2 pts | "The understanding of the source is incomplete or lacks depth. The discussion of the source and its relationship(s) to the perspective(s) is/are oversimplified and lacks development."
+  [5] (no label) | 1 pts | "There is minimal understanding of the source. Discussion of the source and its relationship(s) to the perspective(s) is/are confused, inaccurate, or vague."
+
+CATEGORY 1: Argumentation
+  [0] (no label) | 8 pts | "Convincingly established position with judiciously chosen, consistent and compelling argumentation. The relationship between the source and perspective is perceptively developed and demonstrates insightful understanding of the assignment."
+  [1] (no label) | 7 pts | "Purposely chosen position with logical and capably developed argumentation. The relationship is clearly developed and demonstrates sound understanding of the assignment."
+  [2] (no label) | 6 pts | "(Lower proficient) Purposely chosen position with logical argumentation, but some elements are underdeveloped."
+  [3] (no label) | 5 pts | "Appropriately chosen and developed position with straightforward and conventional argumentation. The relationship is generally developed and demonstrates adequate understanding of the assignment."
+  [4] (no label) | 4 pts | "(Lower satisfactory) Straightforward position with argumentation that lacks consistency or depth."
+  [5] (no label) | 3 pts | "Confusing and largely unrelated position with repetitive, contradictory, and/or simplistic argumentation. The relationship is superficially developed."
+  [6] (no label) | 2 pts | "(Lower limited) Largely unrelated position with little discernible argumentation."
+  [7] (no label) | 1 pts | "Irrelevant and illogical position with little or no relationship to the source or argumentation. The relationship is minimally developed."
+
+CATEGORY 2: Evidence
+  [0] (no label) | 8 pts | "Evidence is sophisticated and deliberately chosen. The relative absence of error is impressive. A thorough and comprehensive discussion of evidence reveals an insightful understanding of social studies and application to the assignment."
+  [1] (no label) | 7 pts | "Evidence is purposeful and specific. Evidence may contain some minor errors. A capable discussion of evidence reveals a solid understanding of social studies and application to the assignment."
+  [2] (no label) | 6 pts | "(Lower proficient) Evidence is purposeful but may contain errors or lack full development."
+  [3] (no label) | 5 pts | "Evidence is conventional and straightforward. The evidence may contain minor errors and/or a mixture of relevant and unnecessary information. Discussion reveals a general, acceptable understanding."
+  [4] (no label) | 4 pts | "(Lower satisfactory) Evidence is conventional but noticeably unfocused or contains unnecessary information."
+  [5] (no label) | 3 pts | "Evidence is somewhat relevant but is unfocused and/or incompletely developed. The evidence contains off-topic detail. The discussion reveals an oversimplified and/or confused understanding."
+  [6] (no label) | 2 pts | "(Lower limited) Evidence is largely irrelevant or underdeveloped."
+  [7] (no label) | 1 pts | "Evidence is either irrelevant and/or inaccurate. The evidence contains major errors. A minimal discussion reveals a lack of understanding."
+
+CATEGORY 3: Communication
+  [0] (no label) | 8 pts | "The writing is fluent, skillfully structured, and judiciously organized. Control of syntax, mechanics, and grammar is sophisticated. Vocabulary is precise and deliberately chosen. The relative absence of error is impressive."
+  [1] (no label) | 7 pts | "The writing is clear and purposefully organized. Control of syntax, mechanics, and grammar is capable. Vocabulary is appropriate and specific. Minor errors in language do not impede communication."
+  [2] (no label) | 6 pts | "(Lower proficient) The writing is clear but some organizational or mechanical weaknesses are present."
+  [3] (no label) | 5 pts | "The writing is straightforward and functionally organized. Control of syntax, mechanics, and grammar is adequate. Vocabulary is conventional. There may be occasional lapses; however, communication remains generally clear."
+  [4] (no label) | 4 pts | "(Lower satisfactory) The writing is adequately organized but contains noticeable errors or vocabulary limitations."
+  [5] (no label) | 3 pts | "The writing is awkward and lacks organization. Control of syntax, mechanics, and grammar is inconsistent. Vocabulary is imprecise and inappropriate. Errors obscure clarity."
+  [6] (no label) | 2 pts | "(Lower limited) The writing is largely unclear and disorganized with significant mechanical issues."
+  [7] (no label) | 1 pts | "The writing is unclear and disorganized. Control of syntax, mechanics, and grammar is lacking. Vocabulary is overgeneralized and inaccurate. Jarring errors impede communication."
+
+=== RUBRIC ID: MvvneGM56Srq1jLG6x8D | name: Position Paragraph Rubric ===
+
+CATEGORY 0: Argumentation
+  [0] E | 8 pts | "Convincingly established position with judiciously chosen, consistent and compelling argumentation. The relationship (see above) is perceptively developed and demonstrates insightful understanding of the assignment."
+  [1] E | 7.5 pts | "Convincingly established position with judiciously chosen, consistent and compelling argumentation. The relationship (see above) is perceptively developed and demonstrates insightful understanding of the assignment."
+  [2] Pf | 7 pts | "Purposely chosen position with logical and capably developed argumentation. The relationship (see above) is clearly developed and demonstrates sound understanding of the assignment."
+  [3] Pf | 6.5 pts | "Purposely chosen position with logical and capably developed argumentation. The relationship (see above) is clearly developed and demonstrates sound understanding of the assignment."
+  [4] S | 6 pts | "Appropriately chosen and developed position with straightforward and conventional argumentation. The relationship (see above) is generally developed and demonstrates adequate understanding of the assignment."
+  [5] S | 5 pts | "Appropriately chosen and developed position with straightforward and conventional argumentation. The relationship (see above) is generally developed and demonstrates adequate understanding of the assignment."
+  [6] S | 4 pts | "Appropriately chosen and developed position with straightforward and conventional argumentation. The relationship (see above) is generally developed and demonstrates adequate understanding of the assignment."
+  [7] L | 3.5 pts | "Confusing and largely unrelated position with repetitive, contradictory, and/or simplistic argumentation. The relationship (see above) is superficially developed and demonstrates an uninformed belief."
+  [8] L | 3 pts | "Confusing and largely unrelated position with repetitive, contradictory, and/or simplistic argumentation. The relationship (see above) is superficially developed and demonstrates an uninformed belief."
+  [9] L | 2.5 pts | "Confusing and largely unrelated position with repetitive, contradictory, and/or simplistic argumentation. The relationship (see above) is superficially developed and demonstrates an uninformed belief."
+  [10] P | 2 pts | "Irrelevant and illogical position with little or no relationship to the source or argumentation. The relationship (see above) is minimally developed."
+  [11] P | 1.5 pts | "Irrelevant and illogical position with little or no relationship to the source or argumentation. The relationship (see above) is minimally developed."
+  [12] P | 1 pts | "Irrelevant and illogical position with little or no relationship to the source or argumentation. The relationship (see above) is minimally developed."
+  [13] INS | 0 pts | "Does not attempt to address the assignment or is too brief to assess in any scoring category."
+
+CATEGORY 1: Evidence
+  [0] E | 8 pts | "Evidence is sophisticated and deliberately chosen. The relative absence of error is impressive. A thorough and comprehensive discussion of evidence reveals an insightful understanding of social and application to the assignment."
+  [1] E | 7.5 pts | "Evidence is sophisticated and deliberately chosen. The relative absence of error is impressive. A thorough and comprehensive discussion of evidence reveals an insightful understanding of social and application to the assignment."
+  [2] Pf | 7 pts | "Evidence is purposeful and specific. Evidence may contain some minor errors. A capable discussion of evidence reveals a solid understanding of social and application to the assignment."
+  [3] Pf | 6.5 pts | "Evidence is purposeful and specific. Evidence may contain some minor errors. A capable discussion of evidence reveals a solid understanding of social and application to the assignment."
+  [4] S | 6 pts | "Evidence is conventional and straightforward. The evidence may contain minor errors and/or a mixture of relevant and unnecessary information. Discussion reveals a general acceptable understanding of social and application to the assignment."
+  [5] S | 5 pts | "Evidence is conventional and straightforward. The evidence may contain minor errors and/or a mixture of relevant and unnecessary information. Discussion reveals a general acceptable understanding of social and application to the assignment."
+  [6] S | 4 pts | "Evidence is conventional and straightforward. The evidence may contain minor errors and/or a mixture of relevant and unnecessary information. Discussion reveals a general acceptable understanding of social and application to the assignment."
+  [7] L | 3.5 pts | "Evidence is somewhat relevant but is unfocused and/or incompletely developed. The evidence contains off topic detail. The discussion reveals an oversimplified and/or confused understanding of social and the application to the assignment."
+  [8] L | 3 pts | "Evidence is somewhat relevant but is unfocused and/or incompletely developed. The evidence contains off topic detail. The discussion reveals an oversimplified and/or confused understanding of social and the application to the assignment."
+  [9] L | 2.5 pts | "Evidence is somewhat relevant but is unfocused and/or incompletely developed. The evidence contains off topic detail. The discussion reveals an oversimplified and/or confused understanding of social and the application to the assignment."
+  [10] P | 2 pts | "Evidence is either irrelevant and/or inaccurate. The evidence contains major errors. A minimal discussion reveals a lack of understanding of social and the application to the assignment."
+  [11] P | 1.5 pts | "Evidence is either irrelevant and/or inaccurate. The evidence contains major errors. A minimal discussion reveals a lack of understanding of social and the application to the assignment."
+  [12] P | 1 pts | "Evidence is either irrelevant and/or inaccurate. The evidence contains major errors. A minimal discussion reveals a lack of understanding of social and the application to the assignment."
+  [13] INS | 0 pts | "Does not attempt to address the assignment or is too brief to assess in any scoring category."
+
+CATEGORY 2: Communication
+  [0] E | 8 pts | "The writing is fluent, skillfully structured, and judiciously organized. Control of syntax, mechanics, and grammar is sophisticated. Vocabulary is precise and deliberately chosen. The relative absence of error is impressive."
+  [1] E | 7.5 pts | "The writing is fluent, skillfully structured, and judiciously organized. Control of syntax, mechanics, and grammar is sophisticated. Vocabulary is precise and deliberately chosen. The relative absence of error is impressive."
+  [2] Pf | 7 pts | "The writing is clear and purposefully organized. Control of syntax, mechanics, and grammar is capable. Vocabulary is appropriate and specific. Minor errors in language do not impede communication."
+  [3] Pf | 6.5 pts | "The writing is clear and purposefully organized. Control of syntax, mechanics, and grammar is capable. Vocabulary is appropriate and specific. Minor errors in language do not impede communication."
+  [4] S | 6 pts | "The writing is straightforward and functionally organized. Control of syntax, mechanics, and grammar is adequate. Vocabulary is conventional and generalized. There may be occasional lapses in control and minor errors; however, the communication remains generally clear."
+  [5] S | 5 pts | "The writing is straightforward and functionally organized. Control of syntax, mechanics, and grammar is adequate. Vocabulary is conventional and generalized. There may be occasional lapses in control and minor errors; however, the communication remains generally clear."
+  [6] S | 4 pts | "The writing is straightforward and functionally organized. Control of syntax, mechanics, and grammar is adequate. Vocabulary is conventional and generalized. There may be occasional lapses in control and minor errors; however, the communication remains generally clear."
+  [7] L | 3.5 pts | "The writing is awkward and lacks organization. Control of syntax, mechanics and grammar is inconsistent. Vocabulary is imprecise, simplistic, and inappropriate. Errors obscure the clarity of communication."
+  [8] L | 3 pts | "The writing is awkward and lacks organization. Control of syntax, mechanics and grammar is inconsistent. Vocabulary is imprecise, simplistic, and inappropriate. Errors obscure the clarity of communication."
+  [9] L | 2.5 pts | "The writing is awkward and lacks organization. Control of syntax, mechanics and grammar is inconsistent. Vocabulary is imprecise, simplistic, and inappropriate. Errors obscure the clarity of communication."
+  [10] P | 2 pts | "The writing is unclear and disorganized. Control of syntax, mechanics, and grammar is lacking. Vocabulary is overgeneralized and inaccurate. Jarring errors impede communication."
+  [11] P | 1.5 pts | "The writing is unclear and disorganized. Control of syntax, mechanics, and grammar is lacking. Vocabulary is overgeneralized and inaccurate. Jarring errors impede communication."
+  [12] P | 1 pts | "The writing is unclear and disorganized. Control of syntax, mechanics, and grammar is lacking. Vocabulary is overgeneralized and inaccurate. Jarring errors impede communication."
+  [13] INS | 0 pts | "Does not attempt to address the assignment or is too brief to assess in any scoring category."
+
+=== RUBRIC ID: UvLgTSECQQTXRV0tx0H3 | name: Three Source Rubric (-2 Streams) ===
+
+CATEGORY 0: Interpretation of Sources
+  [0] (no label) | 8 pts | "Interpretations are insightful and complete. Evidence is specific and accurate and errors, if present, do not take away from the response. The student shows a confident and perceptive understanding of appropriate social knowledge."
+  [1] (no label) | 7.5 pts | "Interpretations are insightful and complete. Evidence is specific and accurate and errors, if present, do not take away from the response. The student shows a confident and perceptive understanding of appropriate social knowledge."
+  [2] (no label) | 7 pts | "Interpretations are insightful and complete. Evidence is specific and accurate and errors, if present, do not take away from the response. The student shows a confident and perceptive understanding of appropriate social knowledge."
+  [3] (no label) | 6.5 pts | "Interpretations are specific and accurate but may not address all sources. Evidence is relevant and appropriate, but may contain some minor factual errors. There is a clear understanding of appropriate social knowledge."
+  [4] (no label) | 6 pts | "Interpretations are specific and accurate but may not address all sources. Evidence is relevant and appropriate, but may contain some minor factual errors. There is a clear understanding of appropriate social knowledge."
+  [5] (no label) | 5.5 pts | "Interpretations are specific and accurate but may not address all sources. Evidence is relevant and appropriate, but may contain some minor factual errors. There is a clear understanding of appropriate social knowledge."
+  [6] (no label) | 5 pts | "Interpretations are valid but general and may contain minor confusion. Evidence is relevant, but general, may be incompletely developed, and/or contains minor errors. There is an acceptable understanding of appropriate social knowledge."
+  [7] (no label) | 4.5 pts | "Interpretations are valid but general and may contain minor confusion. Evidence is relevant, but general, may be incompletely developed, and/or contains minor errors. There is an acceptable understanding of appropriate social knowledge."
+  [8] (no label) | 4 pts | "Interpretations are valid but general and may contain minor confusion. Evidence is relevant, but general, may be incompletely developed, and/or contains minor errors. There is an acceptable understanding of appropriate social knowledge."
+  [9] (no label) | 3.5 pts | "Interpretations are over-generalized and may have a lot of confusion. Evidence is weak, may not always be relevant, and may contain large errors. There is a confused yet somewhat visible understanding of appropriate social knowledge."
+  [10] (no label) | 3 pts | "Interpretations are over-generalized and may have a lot of confusion. Evidence is weak, may not always be relevant, and may contain large errors. There is a confused yet somewhat visible understanding of appropriate social knowledge."
+  [11] (no label) | 2.5 pts | "Interpretations are over-generalized and may have a lot of confusion. Evidence is weak, may not always be relevant, and may contain large errors. There is a confused yet somewhat visible understanding of appropriate social knowledge."
+  [12] (no label) | 2 pts | "Interpretations are mistaken or irrelevant. Evidence, if present, is incomplete and/or marginally relevant and frequently contains significant errors. There is a minimal understanding of appropriate social knowledge."
+  [13] (no label) | 1.5 pts | "Interpretations are mistaken or irrelevant. Evidence, if present, is incomplete and/or marginally relevant and frequently contains significant errors. There is a minimal understanding of appropriate social knowledge."
+  [14] (no label) | 1 pts | "Interpretations are mistaken or irrelevant. Evidence, if present, is incomplete and/or marginally relevant and frequently contains significant errors. There is a minimal understanding of appropriate social knowledge."
+
+CATEGORY 1: Defense of Position
+  [0] (no label) | 8 pts | "The defense of position is based on one or more convincing, logical arguments. Evidence is specific and accurate and errors, if present, do not take away from the response. There is a confident understanding of social knowledge."
+  [1] (no label) | 7.5 pts | "The defense of position is based on one or more convincing, logical arguments. Evidence is specific and accurate and errors, if present, do not take away from the response. There is a confident understanding of social knowledge."
+  [2] (no label) | 7 pts | "The defense of position is based on one or more convincing, logical arguments. Evidence is specific and accurate and errors, if present, do not take away from the response. There is a confident understanding of social knowledge."
+  [3] (no label) | 6.5 pts | "The defense of position is based on one or more sound arguments. Evidence is appropriate, but may contain some minor factual errors. There is a clear understanding of applicable social knowledge."
+  [4] (no label) | 6 pts | "The defense of position is based on one or more sound arguments. Evidence is appropriate, but may contain some minor factual errors. There is a clear understanding of applicable social knowledge."
+  [5] (no label) | 5.5 pts | "The defense of position is based on one or more sound arguments. Evidence is appropriate, but may contain some minor factual errors. There is a clear understanding of applicable social knowledge."
+  [6] (no label) | 5 pts | "The defense of position is based on one or more adequate arguments. Evidence is relevant, but general and/or incomplete. There may be minor errors. There is an acceptable understanding of applicable social knowledge."
+  [7] (no label) | 4.5 pts | "The defense of position is based on one or more adequate arguments. Evidence is relevant, but general and/or incomplete. There may be minor errors. There is an acceptable understanding of applicable social knowledge."
+  [8] (no label) | 4 pts | "The defense of position is based on one or more adequate arguments. Evidence is relevant, but general and/or incomplete. There may be minor errors. There is an acceptable understanding of applicable social knowledge."
+  [9] (no label) | 3.5 pts | "The defense of position is based on simple statements and/or questionable logic rather than on supportive arguments. Evidence is superficial and may not always be relevant. There may be large errors. There is a confused yet visible knowledge of social."
+  [10] (no label) | 3 pts | "The defense of position is based on simple statements and/or questionable logic rather than on supportive arguments. Evidence is superficial and may not always be relevant. There may be large errors. There is a confused yet visible knowledge of social."
+  [11] (no label) | 2.5 pts | "The defense of position is based on simple statements and/or questionable logic rather than on supportive arguments. Evidence is superficial and may not always be relevant. There may be large errors. There is a confused yet visible knowledge of social."
+  [12] (no label) | 2 pts | "The defense of position taken is difficult to understand and/or little or no attempt is made to defend it. Evidence, if present, is incomplete and/or hardly relevant. A lot of errors with minimal understanding of social."
+  [13] (no label) | 1.5 pts | "The defense of position taken is difficult to understand and/or little or no attempt is made to defend it. Evidence, if present, is incomplete and/or hardly relevant. A lot of errors with minimal understanding of social."
+  [14] (no label) | 1 pts | "The defense of position taken is difficult to understand and/or little or no attempt is made to defend it. Evidence, if present, is incomplete and/or hardly relevant. A lot of errors with minimal understanding of social."
+
+CATEGORY 2: Communication
+  [0] (no label) | 4 pts | "The writing is fluent and effectively organized. A convincing, engaging voice is used. Vocabulary is exact and effective. Confident control of sentence construction, grammar, and mechanics. Minimal errors."
+  [1] (no label) | 3 pts | "The writing is clearly organized. A distinct voice is used. Vocabulary is accurate and appropriate. Effective control of sentence construction, grammar and mechanics. Non-detracting errors."
+  [2] (no label) | 2 pts | "The writing is generally clear and functional. Voice is adequate. Vocabulary is generally accurate, but not specific. Basic control of sentence construction, grammar, and mechanics. Errors do not seriously interfere with communication."
+  [3] (no label) | 1 pts | "The writing is uneven and incomplete but somewhat organized. Voice is unconvincing. Vocabulary is generally imprecise or inappropriate. Failing control of sentence construction, grammar, and mechanics. Errors hurt communication."
+  [4] (no label) | 0.5 pts | "The writing is unclear and disorganized. Voice is ineffective and/or unsuitable. Vocabulary is ineffective and often incorrect. A lack of control of sentence construction, grammar, and mechanics. Many errors."
+
+=== RUBRIC ID: X9AFzxTy7JQ5zbs7EmPf | name: Source Analysis Rubric — 20-1 (Nationalism) ===
+
+CATEGORY 0: Interpretation of Sources
+  [0] (no label) | 10 pts | "Interpretation of the source is sophisticated, insightful, and precise. Linkages to the principles of nationalism are accurate, perceptive, and comprehensively developed."
+  [1] (no label) | 9.5 pts | "Interpretation of the source is sophisticated, insightful, and precise. Linkages to the principles of nationalism are accurate, perceptive, and comprehensively developed."
+  [2] (no label) | 9 pts | "Interpretation of the source is sound, specific, and adept. Linkages to the principles of nationalism are consistent, logical, and capably developed."
+  [3] (no label) | 8 pts | "Interpretation of the source is sound, specific, and adept. Linkages to the principles of nationalism are consistent, logical, and capably developed."
+  [4] (no label) | 7 pts | "Interpretation of the source is adequate, straightforward, and conventional. Linkages to the principles of nationalism are relevant and developed in a generalized fashion."
+  [5] (no label) | 6 pts | "Interpretation of the source is adequate, straightforward, and conventional. Linkages to the principles of nationalism are relevant and developed in a generalized fashion."
+  [6] (no label) | 5 pts | "Interpretation of the source is adequate, straightforward, and conventional. Linkages to the principles of nationalism are relevant and developed in a generalized fashion."
+  [7] (no label) | 4 pts | "Interpretation of the source is confused, vague and/or simplistic. Linkages established to the principles of nationalism may be incomplete, superficial, and imprecise."
+  [8] (no label) | 3 pts | "Interpretation of the source is confused, vague and/or simplistic. Linkages established to the principles of nationalism may be incomplete, superficial, and imprecise."
+  [9] (no label) | 2 pts | "Interpretation of the source is minimal, inaccurate and/or copied from the source. Linkages to the principles of nationalism are disjointed, irrelevant, and demonstrate little/no understanding of the assigned task."
+  [10] (no label) | 1 pts | "Interpretation of the source is minimal, inaccurate and/or copied from the source. Linkages to the principles of nationalism are disjointed, irrelevant, and demonstrate little/no understanding of the assigned task."
+
+CATEGORY 1: Identification of Relationships
+  [0] (no label) | 15 pts | "Relationship(s) are accurately and perceptively identified. The explanation is thorough and comprehensive."
+  [1] (no label) | 14 pts | "Relationship(s) are accurately and perceptively identified. The explanation is thorough and comprehensive."
+  [2] (no label) | 13 pts | "Relationship(s) are clearly and capably identified. The explanation is appropriate and purposeful."
+  [3] (no label) | 12 pts | "Relationship(s) are clearly and capably identified. The explanation is appropriate and purposeful."
+  [4] (no label) | 11 pts | "Relationship(s) are clearly and capably identified. The explanation is appropriate and purposeful."
+  [5] (no label) | 10 pts | "Relationship(s) are generally and adequately identified. The explanation is straightforward and conventional."
+  [6] (no label) | 9 pts | "Relationship(s) are generally and adequately identified. The explanation is straightforward and conventional."
+  [7] (no label) | 8 pts | "Relationship(s) are generally and adequately identified. The explanation is straightforward and conventional."
+  [8] (no label) | 7 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [9] (no label) | 6 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [10] (no label) | 5 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [11] (no label) | 4 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [12] (no label) | 3 pts | "The identification of relationship(s) is minimal. The explanation is off topic and undeveloped."
+  [13] (no label) | 2 pts | "The identification of relationship(s) is minimal. The explanation is off topic and undeveloped."
+  [14] (no label) | 1 pts | "The identification of relationship(s) is minimal. The explanation is off topic and undeveloped."
+
+CATEGORY 2: Communication
+  [0] (no label) | 5 pts | "The writing is fluent, skillfully structured, and displays judicious use of terminology. Control of syntax, mechanics and grammar is Excellent. Vocabulary is precise and specific."
+  [1] (no label) | 4 pts | "The writing is coherent, clearly structured, and displays effective use of terminology. Control of syntax, mechanics and grammar is strong. Vocabulary is appropriate and specific."
+  [2] (no label) | 3 pts | "The writing is clear and conventionally structured. Vocabulary is conventional and generalized. There may be occasional lapses in control and minor errors; however, the communication remains generally clear."
+  [3] (no label) | 2 pts | "The writing is awkward and lacks organization. Control of syntax, mechanics and grammar is inconsistent. Vocabulary is imprecise, simplistic, and inappropriate. Errors obscure the clarity of communication."
+  [4] (no label) | 1 pts | "The writing is unclear and disorganized. Control of syntax, mechanics and grammar is lacking. Vocabulary is overgeneralized and inaccurate. Jarring errors impede communication."
+
+=== RUBRIC ID: tAVHZlXE3ylq73lrj0eG | name: Source Analysis Rubric — 10-1 (Globalization) ===
+
+CATEGORY 0: Interpretation of Sources
+  [0] (no label) | 10 pts | "Interpretation of the source is sophisticated, insightful, and precise. Linkages to the principles of globalization are accurate, perceptive, and comprehensively developed."
+  [1] (no label) | 9.5 pts | "Interpretation of the source is sophisticated, insightful, and precise. Linkages to the principles of globalization are accurate, perceptive, and comprehensively developed."
+  [2] (no label) | 9 pts | "Interpretation of the source is sound, specific, and adept. Linkages to the principles of globalization are consistent, logical, and capably developed."
+  [3] (no label) | 8 pts | "Interpretation of the source is sound, specific, and adept. Linkages to the principles of globalization are consistent, logical, and capably developed."
+  [4] (no label) | 7 pts | "Interpretation of the source is adequate, straightforward, and conventional. Linkages to the principles of globalization are relevant and developed in a generalized fashion."
+  [5] (no label) | 6 pts | "Interpretation of the source is adequate, straightforward, and conventional. Linkages to the principles of globalization are relevant and developed in a generalized fashion."
+  [6] (no label) | 5 pts | "Interpretation of the source is adequate, straightforward, and conventional. Linkages to the principles of globalization are relevant and developed in a generalized fashion."
+  [7] (no label) | 4 pts | "Interpretation of the source is confused, vague and/or simplistic. Linkages established to the principles of globalization may be incomplete, superficial, and imprecise."
+  [8] (no label) | 3 pts | "Interpretation of the source is confused, vague and/or simplistic. Linkages established to the principles of globalization may be incomplete, superficial, and imprecise."
+  [9] (no label) | 2 pts | "Interpretation of the source is minimal, inaccurate and/or copied from the source. Linkages to the principles of globalization are disjointed, irrelevant, and demonstrate little/no understanding of the assigned task."
+  [10] (no label) | 1 pts | "Interpretation of the source is minimal, inaccurate and/or copied from the source. Linkages to the principles of globalization are disjointed, irrelevant, and demonstrate little/no understanding of the assigned task."
+
+CATEGORY 1: Identification of Relationships
+  [0] (no label) | 15 pts | "Relationship(s) are accurately and perceptively identified. The explanation is thorough and comprehensive."
+  [1] (no label) | 14 pts | "Relationship(s) are accurately and perceptively identified. The explanation is thorough and comprehensive."
+  [2] (no label) | 13 pts | "Relationship(s) are clearly and capably identified. The explanation is appropriate and purposeful."
+  [3] (no label) | 12 pts | "Relationship(s) are clearly and capably identified. The explanation is appropriate and purposeful."
+  [4] (no label) | 11 pts | "Relationship(s) are clearly and capably identified. The explanation is appropriate and purposeful."
+  [5] (no label) | 10 pts | "Relationship(s) are generally and adequately identified. The explanation is straightforward and conventional."
+  [6] (no label) | 9 pts | "Relationship(s) are generally and adequately identified. The explanation is straightforward and conventional."
+  [7] (no label) | 8 pts | "Relationship(s) are generally and adequately identified. The explanation is straightforward and conventional."
+  [8] (no label) | 7 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [9] (no label) | 6 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [10] (no label) | 5 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [11] (no label) | 4 pts | "The identification of relationship(s) is superficial and of questionable accuracy. The explanation is confusing, overgeneralized and redundant."
+  [12] (no label) | 3 pts | "The identification of relationship(s) is minimal. The explanation is off topic and undeveloped."
+  [13] (no label) | 2 pts | "The identification of relationship(s) is minimal. The explanation is off topic and undeveloped."
+  [14] (no label) | 1 pts | "The identification of relationship(s) is minimal. The explanation is off topic and undeveloped."
+
+CATEGORY 2: Communication
+  [0] (no label) | 5 pts | "The writing is fluent, skillfully structured, and displays judicious use of terminology. Control of syntax, mechanics and grammar is Excellent. Vocabulary is precise and specific."
+  [1] (no label) | 4 pts | "The writing is coherent, clearly structured, and displays effective use of terminology. Control of syntax, mechanics and grammar is strong. Vocabulary is appropriate and specific."
+  [2] (no label) | 3 pts | "The writing is clear and conventionally structured. Vocabulary is conventional and generalized. There may be occasional lapses in control and minor errors; however, the communication remains generally clear."
+  [3] (no label) | 2 pts | "The writing is awkward and lacks organization. Control of syntax, mechanics and grammar is inconsistent. Vocabulary is imprecise, simplistic, and inappropriate. Errors obscure the clarity of communication."
+  [4] (no label) | 1 pts | "The writing is unclear and disorganized. Control of syntax, mechanics and grammar is lacking. Vocabulary is overgeneralized and inaccurate. Jarring errors impede communication."

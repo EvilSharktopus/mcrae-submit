@@ -4,20 +4,33 @@ import { useAuth } from '../auth/AuthContext';
 import Dashboard from './Dashboard';
 import Setup from './Setup';
 import HelpRequests from './HelpRequests';
+import JigsawAdmin from './jigsaw/JigsawAdmin';
 import { db } from '../firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, limit } from 'firebase/firestore';
 import '../styles/globals.css';
 
 export default function TeacherApp() {
   const { user, signOut } = useAuth();
   const [tab, setTab] = useState('dashboard');
   const [helpCount, setHelpCount] = useState(0);
+  const [jigsawAvailable, setJigsawAvailable] = useState(false);
 
   // Live count of unresolved help requests
   useEffect(() => {
     const q = query(collection(db, 'help_requests'), where('resolved', '==', false));
     const unsub = onSnapshot(q, snap => setHelpCount(snap.size));
     return () => unsub();
+  }, []);
+
+  // Check if jigsaw has ever been set up
+  useEffect(() => {
+    async function checkJigsaw() {
+      try {
+        const snap = await getDocs(query(collection(db, 'jigsawActivities'), limit(1)));
+        setJigsawAvailable(!snap.empty);
+      } catch { setJigsawAvailable(false); }
+    }
+    checkJigsaw();
   }, []);
 
   return (
@@ -50,6 +63,11 @@ export default function TeacherApp() {
                 </span>
               )}
             </button>
+            {jigsawAvailable && (
+              <button className={`app-nav__tab ${tab === 'jigsaw' ? 'active' : ''}`} onClick={() => setTab('jigsaw')}>
+                🧩 Jigsaw
+              </button>
+            )}
             <button className={`app-nav__tab ${tab === 'setup' ? 'active' : ''}`} onClick={() => setTab('setup')}>
               Setup
             </button>
@@ -62,6 +80,7 @@ export default function TeacherApp() {
       {tab === 'dashboard' && <Dashboard />}
       {tab === 'help' && <HelpRequests />}
       {tab === 'setup' && <Setup />}
+      {tab === 'jigsaw' && <JigsawAdmin />}
     </>
   );
 }

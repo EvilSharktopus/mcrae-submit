@@ -6,7 +6,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
 import { isPastCutoff, CUTOFF_HOUR, CUTOFF_MIN } from '../utils/cutoff';
 
-export default function AssignmentList({ section }) {
+export default function AssignmentList({ section, jigsawActive }) {
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState({});
   const [loading,     setLoading]     = useState(true);
@@ -95,6 +95,23 @@ export default function AssignmentList({ section }) {
       {isPastCutoff() && (
         <div style={{ background: 'rgba(255,100,100,0.10)', border: '1px solid rgba(255,100,100,0.3)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 14, color: 'var(--text)' }}>
           🔒 Submissions are closed for today ({CUTOFF_HOUR}:{String(CUTOFF_MIN).padStart(2,'0')} cutoff).
+        </div>
+      )}
+
+      {jigsawActive && (
+        <div 
+          className="jigsaw-banner" 
+          onClick={() => navigate('/jigsaw')}
+          role="button" 
+          tabIndex={0} 
+          onKeyDown={e => e.key === 'Enter' && navigate('/jigsaw')}
+        >
+          <div className="jigsaw-banner__icon">🧩</div>
+          <div>
+            <div className="jigsaw-banner__title">Live Jigsaw Activity</div>
+            <div className="jigsaw-banner__sub">Join your group for collaborative research</div>
+          </div>
+          <div className="jigsaw-banner__arrow">→</div>
         </div>
       )}
 
