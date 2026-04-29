@@ -165,7 +165,7 @@ function RubricBuilder({ onSaved }) {
 // ── Assignment Registration ─────────────────────────────────────────────────
 
 function AssignmentForm({ rubrics, onSaved }) {
-  const [form, setForm] = useState({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '' });
+  const [form, setForm] = useState({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '', isRestricted: false, restrictedEmailsText: '' });
   const [saving, setSaving] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -174,8 +174,16 @@ function AssignmentForm({ rubrics, onSaved }) {
     if (!form.name.trim() || !form.docUrl.trim()) return;
     setSaving(true);
     try {
-      await addDoc(collection(db, 'assignments'), { ...form, name: form.name.trim(), docUrl: form.docUrl.trim() });
-      setForm({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '' });
+      const restrictedEmails = form.isRestricted 
+        ? form.restrictedEmailsText.split('\n').map(e => e.trim()).filter(Boolean) 
+        : [];
+      await addDoc(collection(db, 'assignments'), { 
+        ...form, 
+        name: form.name.trim(), 
+        docUrl: form.docUrl.trim(),
+        restrictedEmails 
+      });
+      setForm({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '', isRestricted: false, restrictedEmailsText: '' });
       onSaved?.();
     } finally { setSaving(false); }
   };
@@ -224,6 +232,25 @@ function AssignmentForm({ rubrics, onSaved }) {
         <div className="field" style={{ gridColumn: '1 / -1' }}>
           <label>Google Doc URL</label>
           <input value={form.docUrl} onChange={e => set('docUrl', e.target.value)} placeholder="https://docs.google.com/document/d/..." />
+        </div>
+        <div className="field" style={{ gridColumn: '1 / -1' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600 }}>
+            <input type="checkbox" checked={form.isRestricted} onChange={e => set('isRestricted', e.target.checked)} />
+            Restrict to specific students
+          </label>
+          {form.isRestricted && (
+            <div style={{ marginTop: 8 }}>
+              <label style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 4, display: 'block' }}>
+                Enter student Google Auth emails (one per line):
+              </label>
+              <textarea
+                value={form.restrictedEmailsText}
+                onChange={e => set('restrictedEmailsText', e.target.value)}
+                placeholder="student1@example.com&#10;student2@example.com"
+                style={{ width: '100%', minHeight: 80, padding: 8, borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)', resize: 'vertical' }}
+              />
+            </div>
+          )}
         </div>
       </div>
       <button className="btn btn--primary" onClick={handleSave} disabled={saving || !form.name.trim() || !form.docUrl.trim()}>
@@ -441,7 +468,14 @@ function AssignmentRow({ a, rubrics, onDelete, onUpdate }) {
     <div style={{ borderTop: '1px solid var(--border)' }}>
       {/* Main row */}
       <div className="setup-list-item" style={{ flexWrap: 'wrap', gap: 8, padding: '8px 14px' }}>
-        <span style={{ flex: 1, minWidth: 140, fontWeight: 600, fontSize: 13 }}>{a.name}</span>
+        <span style={{ flex: 1, minWidth: 140, fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+          {a.name}
+          {a.restrictedEmails?.length > 0 && (
+            <span title="Restricted to specific students" style={{ fontSize: 11, background: 'rgba(255, 180, 0, 0.15)', color: '#b38000', padding: '2px 6px', borderRadius: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              🔒 Restricted
+            </span>
+          )}
+        </span>
 
         {/* Course dropdown */}
         <select style={selStyle} value={a.course} onChange={async e => {

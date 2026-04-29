@@ -63,6 +63,12 @@ export default function AssignmentList({ section, jigsawActive }) {
             // Non-timed: respect the manual isOpen toggle and daily cutoff
             if (a.isOpen === false) return false;
             if (isPastCutoff()) return false;
+
+            // Restrict to specific students if whitelist is active
+            if (a.restrictedEmails && a.restrictedEmails.length > 0) {
+              if (!a.restrictedEmails.includes(user.email)) return false;
+            }
+
             return true;
           });
         }
