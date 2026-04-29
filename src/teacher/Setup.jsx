@@ -171,7 +171,7 @@ function AssignmentForm({ rubrics, onSaved }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.docUrl.trim()) return;
+    if (!form.name.trim() || (form.type !== 'solo_debate' && !form.docUrl.trim())) return;
     setSaving(true);
     try {
       const restrictedEmails = form.isRestricted 
@@ -236,10 +236,12 @@ function AssignmentForm({ rubrics, onSaved }) {
             ))}
           </select>
         </div>
-        <div className="field" style={{ gridColumn: '1 / -1' }}>
-          <label>Google Doc URL</label>
-          <input value={form.docUrl} onChange={e => set('docUrl', e.target.value)} placeholder="https://docs.google.com/document/d/..." />
-        </div>
+        {form.type !== 'solo_debate' && (
+          <div className="field" style={{ gridColumn: '1 / -1' }}>
+            <label>Google Doc URL</label>
+            <input value={form.docUrl} onChange={e => set('docUrl', e.target.value)} placeholder="https://docs.google.com/document/d/..." />
+          </div>
+        )}
         <div className="field" style={{ gridColumn: '1 / -1' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600 }}>
             <input type="checkbox" checked={form.isRestricted} onChange={e => set('isRestricted', e.target.checked)} />
