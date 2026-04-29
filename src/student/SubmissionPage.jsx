@@ -56,13 +56,17 @@ export default function SubmissionPage() {
   const [activeRequest, setActiveRequest] = useState(null);
   const [teacherReplies, setTeacherReplies] = useState([]);
 
-  const editorRef         = useRef(null);
-  const keystrokesLog     = useRef([]);
-  const lastTrustedKey    = useRef(Date.now());
-  const anomalies         = useRef(new Set());
-  const velocityCheck     = useRef([]);
-  const initialContentSet = useRef(false);
-  const saveTimer         = useRef(null);
+  const editorRef           = useRef(null);
+  const keystrokeCount      = useRef(0);
+  const firstKeystroke      = useRef(null);
+  const accumulatedActiveMS = useRef(0);
+  const lastFocusTime       = useRef(Date.now());
+  const sessionLog          = useRef([]);
+  const lastTrustedKey      = useRef(Date.now());
+  const anomalies           = useRef(new Set());
+  const velocityCheck       = useRef([]);
+  const initialContentSet   = useRef(false);
+  const saveTimer           = useRef(null);
   const splitRef          = useRef(null);
   const isDraggingRef     = useRef(false);
   const [splitPct,     setSplitPct]     = useState(40);
@@ -101,6 +105,30 @@ export default function SubmissionPage() {
     document.body.style.cursor     = 'col-resize';
     document.body.style.userSelect = 'none';
   };
+
+  // ── Session tracking (focus/blur) ────────────────────────────────────────
+  useEffect(() => {
+    const onFocus = () => {
+      if (!lastFocusTime.current) lastFocusTime.current = Date.now();
+      sessionLog.current.push({ type: 'focus', time: Date.now() });
+    };
+    const onBlur = () => {
+      if (lastFocusTime.current) {
+        accumulatedActiveMS.current += (Date.now() - lastFocusTime.current);
+        lastFocusTime.current = null;
+      }
+      sessionLog.current.push({ type: 'blur', time: Date.now() });
+    };
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', onBlur);
+      if (lastFocusTime.current) {
+        accumulatedActiveMS.current += (Date.now() - lastFocusTime.current);
+      }
+    };
+  }, []);
 
   // ── Load assignment + existing draft ─────────────────────────────────────
   useEffect(() => {
@@ -188,6 +216,18 @@ export default function SubmissionPage() {
     }
     updateWordCount();
     if (draftData?.lastSaved?.toDate) setLastSaved(draftData.lastSaved.toDate());
+    
+    // Initialize tracking from existing draft
+    if (draftData?.integrityLog) {
+      keystrokeCount.current = draftData.integrityLog.keystrokes || 0;
+      accumulatedActiveMS.current = (draftData.integrityLog.activeTimeSeconds || 0) * 1000;
+      firstKeystroke.current = draftData.integrityLog.firstKeystroke || null;
+      sessionLog.current = draftData.integrityLog.sessionLog || [];
+      if (draftData.integrityLog.anomalies) {
+        draftData.integrityLog.anomalies.forEach(a => anomalies.current.add(a));
+      }
+    }
+    sessionLog.current.push({ type: 'open', time: Date.now() });
   }, [loading, draftData]);
 
   // ── When entering revision mode, reset to current draft content ───────────
@@ -207,6 +247,35 @@ export default function SubmissionPage() {
     setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
   };
 
+  // ── Integrity Calculation ────────────────────────────────────────────────
+  const calculateIntegrity = (wc, isSubmit = false) => {
+    let currentActive = accumulatedActiveMS.current;
+    if (lastFocusTime.current) {
+      currentActive += (Date.now() - lastFocusTime.current);
+    }
+    
+    let wpm = 0;
+    if (firstKeystroke.current) {
+      const elapsedMinutes = (Date.now() - firstKeystroke.current) / 60000;
+      if (elapsedMinutes > 0) {
+        wpm = Math.round(wc / elapsedMinutes);
+      }
+    }
+
+    if (isSubmit) {
+      sessionLog.current.push({ type: 'submit', time: Date.now() });
+    }
+
+    return {
+      keystrokes: keystrokeCount.current,
+      activeTimeSeconds: Math.round(currentActive / 1000),
+      firstKeystroke: firstKeystroke.current,
+      wpm,
+      anomalies: Array.from(anomalies.current),
+      sessionLog: sessionLog.current
+    };
+  };
+
   // ── Auto-save (5 second debounce) ────────────────────────────────────────
   const scheduleSave = useCallback(() => {
     setSaveStatus('saving');
@@ -216,22 +285,8 @@ export default function SubmissionPage() {
       const html  = editorRef.current.innerHTML;
       const plain = editorRef.current.innerText || '';
       const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
-      const logs = keystrokesLog.current;
-      let activeMS = 0;
-      for (let i = 1; i < logs.length; i++) {
-        const diff = logs[i] - logs[i - 1];
-        if (diff < 15000) activeMS += diff;
-      }
-      const activeMinutes = activeMS / 60000;
-      const wpm = activeMinutes > 0 ? Math.round(wc / activeMinutes) : 0;
       
-      const integrityLog = {
-        keystrokes: logs.length,
-        activeTimeSeconds: Math.round(activeMS / 1000),
-        wpm,
-        anomalies: Array.from(anomalies.current),
-        log: logs
-      };
+      const integrityLog = calculateIntegrity(wc);
 
       try {
         await setDoc(docRef, {
@@ -274,8 +329,9 @@ export default function SubmissionPage() {
       document.execCommand('insertHTML', false, '\u00a0\u00a0\u00a0\u00a0');
     }
     if (e.isTrusted) {
+      if (!firstKeystroke.current) firstKeystroke.current = Date.now();
+      keystrokeCount.current += 1;
       lastTrustedKey.current = Date.now();
-      keystrokesLog.current.push(lastTrustedKey.current);
     }
   };
 
@@ -410,22 +466,7 @@ export default function SubmissionPage() {
     if (!plain.trim()) return;
     const wc = plain.trim().split(/\s+/).filter(Boolean).length;
     
-    // Calculate integrity final
-    const logs = keystrokesLog.current;
-    let activeMS = 0;
-    for (let i = 1; i < logs.length; i++) {
-      const diff = logs[i] - logs[i - 1];
-      if (diff < 15000) activeMS += diff;
-    }
-    const activeMinutes = activeMS / 60000;
-    const wpm = activeMinutes > 0 ? Math.round(wc / activeMinutes) : 0;
-    const integrityLog = {
-      keystrokes: logs.length,
-      activeTimeSeconds: Math.round(activeMS / 1000),
-      wpm,
-      anomalies: Array.from(anomalies.current),
-      log: logs
-    };
+    const integrityLog = calculateIntegrity(wc, true);
 
     setSubmitting(true);
     try {
