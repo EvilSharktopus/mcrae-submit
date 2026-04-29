@@ -262,7 +262,7 @@ function AssignmentForm({ rubrics, onSaved }) {
           )}
         </div>
       </div>
-      <button className="btn btn--primary" onClick={handleSave} disabled={saving || !form.name.trim() || !form.docUrl.trim()}>
+      <button className="btn btn--primary" onClick={handleSave} disabled={saving || !form.name.trim() || (form.type !== 'solo_debate' && !form.docUrl.trim())}>
         {saving ? 'Saving...' : 'Register Assignment'}
       </button>
     </div>
