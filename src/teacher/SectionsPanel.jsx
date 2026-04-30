@@ -7,12 +7,13 @@ import {
 } from 'firebase/firestore';
 import '../styles/section.css';
 
-const COURSES = ['Social 9', 'Social 10', 'Social 20', 'Social 30'];
+const COURSES = ['Social 9', 'Social 10', 'Social 20', 'Social 30', 'Philosophy'];
 const STREAMS_FOR_SECTION = {
   'Social 9':  [],
   'Social 10': ['10-1', '10-2'],
   'Social 20': ['20-1', '20-2'],
   'Social 30': ['30-1', '30-2'],
+  'Philosophy': [],
 };
 
 export default function SectionsPanel() {

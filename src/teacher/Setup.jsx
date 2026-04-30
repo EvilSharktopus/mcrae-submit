@@ -383,12 +383,13 @@ function SavedRubrics({ rubrics, assignments, onAssignmentUpdate }) {
 }
 
 
-const COURSES = ['Social 9', 'Social 10', 'Social 20', 'Social 30'];
+const COURSES = ['Social 9', 'Social 10', 'Social 20', 'Social 30', 'Philosophy'];
 const STREAMS_FOR = {
   'Social 9':  [],          // no streams — all together
   'Social 10': ['-1', '-2'],
   'Social 20': ['-1', '-2'],
   'Social 30': ['-1', '-2'],
+  'Philosophy': [],         // no streams
 };
 const UNITS_FOR = {
   'Social 9': [
@@ -427,6 +428,7 @@ const UNITS_FOR = {
     { label: 'Imposition',             value: 'social-30/imposition' },
     { label: 'Intro to Ideologies',    value: 'social-30/intro-to-ideologies' },
   ],
+  'Philosophy': [],
 };
 const selStyle = { fontSize: 13, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)' };
 
@@ -746,7 +748,7 @@ export default function Setup() {
   const [studentViewCourse, setStudentViewCourse] = useState('');
   const [studentViewStream, setStudentViewStream] = useState('');
 
-  const EXPORT_COURSES = ['', 'Social 9', 'Social 10', 'Social 20', 'Social 30'];
+  const EXPORT_COURSES = ['', 'Social 9', 'Social 10', 'Social 20', 'Social 30', 'Philosophy'];
   const EXPORT_STREAMS = ['', '-1', '-2'];
 
   async function load() {
