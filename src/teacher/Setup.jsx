@@ -165,7 +165,7 @@ function RubricBuilder({ onSaved }) {
 // ── Assignment Registration ─────────────────────────────────────────────────
 
 function AssignmentForm({ rubrics, onSaved }) {
-  const [form, setForm] = useState({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '', isRestricted: false, restrictedEmailsText: '', type: 'standard' });
+  const [form, setForm] = useState({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '', isRestricted: false, restrictedEmailsText: '', type: 'standard', prompt: '', maxScore: 7 });
   const [saving, setSaving] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -183,7 +183,7 @@ function AssignmentForm({ rubrics, onSaved }) {
         docUrl: form.docUrl.trim(),
         restrictedEmails 
       });
-      setForm({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '', isRestricted: false, restrictedEmailsText: '', type: 'standard' });
+      setForm({ name: '', course: 'Social 9', stream: '', unit: '', docUrl: '', rubricId: '', isRestricted: false, restrictedEmailsText: '', type: 'standard', prompt: '', maxScore: 7 });
       onSaved?.();
     } finally { setSaving(false); }
   };
@@ -201,6 +201,7 @@ function AssignmentForm({ rubrics, onSaved }) {
           <select value={form.type} onChange={e => set('type', e.target.value)}>
             <option value="standard">Standard Essay</option>
             <option value="solo_debate">Solo Debate</option>
+            <option value="film_response">Film Response</option>
           </select>
         </div>
         <div className="field">
@@ -236,10 +237,22 @@ function AssignmentForm({ rubrics, onSaved }) {
             ))}
           </select>
         </div>
-        {form.type !== 'solo_debate' && (
+        {form.type !== 'solo_debate' && form.type !== 'film_response' && (
           <div className="field" style={{ gridColumn: '1 / -1' }}>
             <label>Google Doc URL</label>
             <input value={form.docUrl} onChange={e => set('docUrl', e.target.value)} placeholder="https://docs.google.com/document/d/..." />
+          </div>
+        )}
+        {form.type === 'film_response' && (
+          <div className="field" style={{ gridColumn: '1 / -1' }}>
+            <label>Prompt <span style={{ fontWeight: 400, color: 'var(--text-dim)' }}>(shown to students)</span></label>
+            <textarea
+              value={form.prompt}
+              onChange={e => set('prompt', e.target.value)}
+              placeholder="Question shown to students..."
+              rows={3}
+              style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text)', resize: 'vertical', fontFamily: 'inherit', fontSize: 13 }}
+            />
           </div>
         )}
         <div className="field" style={{ gridColumn: '1 / -1' }}>

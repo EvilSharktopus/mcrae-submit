@@ -30,6 +30,7 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
     (subData.submitted === undefined && !subData.response && !subData.plainResponse);
 
   const [selections,  setSelections]  = useState({}); // catIdx → { descriptorIndex, points, label, text }
+  const [score,       setScore]       = useState(subData.mark ?? null); // for film_response 1-7 picker
   const [feedback,    setFeedback]    = useState(subData.feedback || '');
   const [sending,     setSending]     = useState(false);
   const [sent,        setSent]        = useState(subData.emailSent || false);
@@ -47,6 +48,7 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
   // ── Reset state on new submission ─────────────────────────────────────────
   useEffect(() => {
     setSubData(submission);
+    setScore(submission.mark ?? null);
     setFeedback(submission.feedback || '');
     setSent(submission.emailSent || false);
     setSaveStatus('');
@@ -123,10 +125,10 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
 
   // ── Send mark ─────────────────────────────────────────────────────────────
   const handleSendMark = async () => {
-    if (!rubric && !feedback.trim()) return;
+    if (!rubric && score == null && !feedback.trim()) return;
     setSending(true);
     try {
-      const mark = rubric ? totalMark : null;
+      const mark = rubric ? totalMark : (score ?? null);
       // Build rubric breakdown for email
       const rubricBreakdown = rubric?.categories?.map((cat, catIdx) => ({
         category: cat.name,
@@ -361,6 +363,25 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
                 {rubric.categories?.map((cat, catIdx) => renderRubricCategory(cat, catIdx))}
               </div>
             </>
+          ) : assignment?.type === 'film_response' ? (
+            <div>
+              <div className="marking-pane__label">
+                Score — <span className="marking-total">{score ?? '—'} / {assignment.maxScore || 7}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                {Array.from({ length: assignment.maxScore || 7 }, (_, i) => i + 1).map(n => (
+                  <button
+                    key={n}
+                    className={`rubric-pt-btn${score === n ? ' selected' : ''}`}
+                    onClick={() => setScore(prev => prev === n ? null : n)}
+                    disabled={sent}
+                    style={{ fontSize: 15, minWidth: 38, minHeight: 38 }}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
           ) : (
             <div className="marking-pane__label">No rubric attached</div>
           )}

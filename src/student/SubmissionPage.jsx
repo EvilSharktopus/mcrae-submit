@@ -648,7 +648,14 @@ export default function SubmissionPage() {
                 <div className="assignment-card__label">Assignment</div>
                 <h2 className="assignment-card__name">{assignment.name}</h2>
                 {assignment.stream && <span className="badge badge--pending">{assignment.stream}</span>}
-                {assignment.description && <p className="assignment-card__desc">{assignment.description}</p>}
+                {assignment.prompt ? (
+                  <div style={{ marginTop: 24 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)', marginBottom: 10 }}>Your Prompt</div>
+                    <p style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--text)', margin: 0 }}>{assignment.prompt}</p>
+                  </div>
+                ) : (
+                  assignment.description && <p className="assignment-card__desc">{assignment.description}</p>
+                )}
               </div>
             </div>
           )}
