@@ -55,17 +55,20 @@ export default function MarkingView({ submission, assignment, rubric, onClose, p
     setAiUsed(false);
     setAnomaliesDismissed(false);
 
-    // Restore any saved AI draft selections so they survive navigation
-    if (submission.aiDraftSelections && rubric?.categories) {
+    // Restore any saved selections so they survive navigation
+    const savedSelections = submission.finalSelections || submission.aiDraftSelections;
+    if (savedSelections && rubric?.categories) {
       const restored = {};
       rubric.categories.forEach((cat, catIdx) => {
-        const saved = submission.aiDraftSelections[catIdx];
+        const saved = savedSelections[catIdx];
         if (saved != null && cat.descriptors?.[saved.descriptorIndex]) {
           restored[catIdx] = saved;
         }
       });
       setSelections(restored);
-      if (Object.keys(restored).length > 0) setAiUsed(true);
+      if (Object.keys(restored).length > 0 && savedSelections === submission.aiDraftSelections && !submission.finalSelections) {
+         setAiUsed(true);
+      }
     } else {
       setSelections({});
     }
