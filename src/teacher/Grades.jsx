@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '../firebase';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { exportCSV } from '../utils/exportUtils';
 import '../styles/dashboard.css';
 
@@ -21,25 +21,6 @@ export default function Grades() {
         setAssignments(asns);
         setSubmissions(sSnap.docs.map(d => ({ id: d.id, ...d.data() })));
         
-        // TEMPORARY FIX
-        const updates = [];
-        sSnap.docs.forEach(d => {
-          const s = d.data();
-          let newName = null;
-          if (s.studentName === 'Mason' || s.studentName === 'mason') newName = 'Mason Barrie';
-          else if (s.studentName === 'Milan' || s.studentName === 'milan') newName = 'Milan Chan';
-          else if (s.studentName === 'Ruby' || s.studentName === 'ruby') newName = 'Ruby Rayner';
-          
-          if (newName) {
-            updates.push(updateDoc(doc(db, 'submissions', d.id), { studentName: newName }));
-          }
-        });
-        if (updates.length > 0) {
-          console.log('Fixing names for', updates.length, 'docs...');
-          await Promise.all(updates);
-          console.log('Names fixed. Please reload!');
-        }
-
         // Auto-select first available group
         const groupMap = {};
         asns.forEach(a => {
