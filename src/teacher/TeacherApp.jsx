@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import Dashboard from './Dashboard';
 import Setup from './Setup';
 import HelpRequests from './HelpRequests';
+import Grades from './Grades';
 import JigsawAdmin from './jigsaw/JigsawAdmin';
 import { db } from '../firebase';
 import { collection, query, where, onSnapshot, getDocs, limit } from 'firebase/firestore';
@@ -44,6 +45,9 @@ export default function TeacherApp() {
             <button className={`app-nav__tab ${tab === 'dashboard' ? 'active' : ''}`} onClick={() => setTab('dashboard')}>
               Submissions
             </button>
+            <button className={`app-nav__tab ${tab === 'grades' ? 'active' : ''}`} onClick={() => setTab('grades')}>
+              Grades
+            </button>
             <button
               className={`app-nav__tab ${tab === 'help' ? 'active' : ''}`}
               onClick={() => setTab('help')}
@@ -78,6 +82,7 @@ export default function TeacherApp() {
       </nav>
 
       {tab === 'dashboard' && <Dashboard />}
+      {tab === 'grades' && <Grades />}
       {tab === 'help' && <HelpRequests />}
       {tab === 'setup' && <Setup />}
       {tab === 'jigsaw' && <JigsawAdmin />}
