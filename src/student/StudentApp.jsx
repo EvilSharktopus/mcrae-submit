@@ -145,7 +145,7 @@ export default function StudentApp() {
           {/* Tab bar */}
           <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: 'var(--bg-card)', padding: '0 16px' }}>
             <NavTab to="/" label="Assignments" />
-            <NavTab to="/marked" label="Marked" badge={unviewedCount} />
+            <NavTab to="/marked" label="Submissions" badge={unviewedCount} />
             {jigsawActive && <NavTab to="/jigsaw" label="🧩 Jigsaw" />}
           </div>
 

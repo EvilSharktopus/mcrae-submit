@@ -18,31 +18,31 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-async function fixNames() {
-  console.log('Fetching submissions...');
+async function inspectStudent() {
+  console.log('Fetching submissions for Kinnley...');
   const sSnap = await getDocs(collection(db, 'submissions'));
-  const updates = [];
   
+  const subs = [];
   sSnap.docs.forEach(d => {
     const s = d.data();
-    let newName = null;
-    if (s.studentName === 'Mason' || s.studentName === 'mason') newName = 'Mason Barrie';
-    else if (s.studentName === 'Milan' || s.studentName === 'milan') newName = 'Milan Chan';
-    else if (s.studentName === 'Ruby' || s.studentName === 'ruby') newName = 'Ruby Rayner';
-    
-    if (newName) {
-      console.log(`Fixing ${s.studentName} -> ${newName} (doc: ${d.id})`);
-      updates.push(updateDoc(doc(db, 'submissions', d.id), { studentName: newName }));
+    if (s.studentEmail === 'kinnleypevoy@rvschools.ab.ca') {
+      subs.push({
+        id: d.id,
+        assignmentId: s.assignmentId,
+        studentName: s.studentName,
+        submitted: s.submitted,
+        wordCount: s.wordCount,
+        hasResponse: !!s.response,
+        responseLength: s.response ? s.response.length : 0,
+        plainResponseLen: s.plainResponse ? s.plainResponse.length : 0,
+        lastSaved: s.lastSaved ? s.lastSaved.toDate() : null,
+        submittedAt: s.submittedAt ? s.submittedAt.toDate() : null
+      });
     }
   });
 
-  if (updates.length > 0) {
-    console.log(`Applying ${updates.length} updates...`);
-    await Promise.all(updates);
-    console.log('Names successfully updated in Firestore!');
-  } else {
-    console.log('No names needed fixing.');
-  }
+  console.log(`Found ${subs.length} submissions for Kinnley:`);
+  console.dir(subs, { depth: null, colors: true });
 }
 
-fixNames().catch(console.error).finally(() => process.exit(0));
+inspectStudent().catch(console.error).finally(() => process.exit(0));

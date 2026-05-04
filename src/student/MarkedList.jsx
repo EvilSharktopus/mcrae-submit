@@ -52,12 +52,12 @@ export default function MarkedList() {
 
   return (
     <div className="page">
-      <h1 className="page-title">Marked Assignments</h1>
+      <h1 className="page-title">My Submissions</h1>
 
       {items.length === 0 ? (
         <div className="empty">
           <span className="empty__icon">📋</span>
-          <p>No marked assignments yet — check back after Mr. McRae has marked your work.</p>
+          <p>No submissions have been marked yet — check back after Mr. McRae has marked your work.</p>
         </div>
       ) : (
         <div>
