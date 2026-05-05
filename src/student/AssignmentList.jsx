@@ -51,6 +51,11 @@ export default function AssignmentList({ section, jigsawActive }) {
               if (!isNaN(d)) return d.getTime();
               return new Date(String(v).replace('T', ' ')).getTime(); // datetime-local fallback
             };
+            // Restrict to specific students if whitelist is active
+            if (a.restrictedEmails && a.restrictedEmails.length > 0) {
+              if (!a.restrictedEmails.includes(user.email)) return false;
+            }
+
             const openMs  = toMs(a.openAt);
             const closeMs = toMs(a.closeAt);
             const isTimed = !!(a.openAt || a.closeAt);
@@ -63,11 +68,6 @@ export default function AssignmentList({ section, jigsawActive }) {
             // Non-timed: respect the manual isOpen toggle and daily cutoff
             if (a.isOpen === false) return false;
             if (isPastCutoff()) return false;
-
-            // Restrict to specific students if whitelist is active
-            if (a.restrictedEmails && a.restrictedEmails.length > 0) {
-              if (!a.restrictedEmails.includes(user.email)) return false;
-            }
 
             return true;
           });
