@@ -1,6 +1,6 @@
 // Vercel serverless function — POST /api/gemini-score
 // Scores a single student submission against the RVS rubric using Gemini.
-// The GEMINI_KEY env var lives server-side only.
+// Uses ESM (export default) because package.json has "type":"module".
 
 const RVS_RUBRIC = `
 CONTENT:
@@ -34,10 +34,9 @@ SPELLING, CAPITALIZATION & PUNCTUATION (consider proportion of error to length a
   1 - Rarely applies correct capitalization, punctuation, spelling, and usage.
 `;
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  // Accept either key name
   const key = process.env.GEMINI_KEY || process.env.VITE_GEMINI_KEY;
   if (!key) return res.status(500).json({ error: 'GEMINI_KEY not set on server' });
 
@@ -76,7 +75,7 @@ Respond ONLY with valid JSON, no extra text or markdown:
   let rawBody = '';
   try {
     const geminiRes = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + key,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -90,25 +89,24 @@ Respond ONLY with valid JSON, no extra text or markdown:
     rawBody = await geminiRes.text();
 
     if (!geminiRes.ok) {
-      return res.status(502).json({ error: 'Gemini ' + geminiRes.status + ': ' + rawBody });
+      return res.status(502).json({ error: `Gemini ${geminiRes.status}: ${rawBody}` });
     }
 
     const data = JSON.parse(rawBody);
-    const raw = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text) || '';
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const cleaned = raw.replace(/```json\n?/gi, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleaned);
 
     const catKeys = ['content', 'audienceWordChoice', 'organization', 'sentenceStructure', 'conventions'];
-    for (var i = 0; i < catKeys.length; i++) {
-      var k = catKeys[i];
-      var v = parsed[k];
+    for (const k of catKeys) {
+      const v = parsed[k];
       if (!Number.isInteger(v) || v < 1 || v > 4) {
-        return res.status(502).json({ error: 'Invalid score for ' + k + ': ' + v });
+        return res.status(502).json({ error: `Invalid score for ${k}: ${v}` });
       }
     }
 
     return res.status(200).json(parsed);
   } catch (err) {
-    return res.status(502).json({ error: 'Function error: ' + err.message + (rawBody ? ' | raw: ' + rawBody.slice(0, 200) : '') });
+    return res.status(502).json({ error: `Function error: ${err.message}${rawBody ? ' | raw: ' + rawBody.slice(0, 200) : ''}` });
   }
-};
+}
