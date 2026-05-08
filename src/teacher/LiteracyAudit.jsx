@@ -153,9 +153,12 @@ export default function LiteracyAudit() {
         setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, rvsAudit: audit } : s));
       } catch (e) {
         // Flag this submission as failed, continue with rest
-        const failed = { error: e.message, scoredAt: new Date().toISOString(), assignmentId: selectedId };
+        const errMsg = e.message || 'Unknown error';
+        const failed = { error: errMsg, scoredAt: new Date().toISOString(), assignmentId: selectedId };
         await updateDoc(doc(db, 'submissions', sub.id), { rvsAudit: failed }).catch(() => {});
         setSubmissions(prev => prev.map(s => s.id === sub.id ? { ...s, rvsAudit: failed } : s));
+        // Show first error in the error banner
+        if (!error) setError(`Scoring error for ${sub.studentName}: ${errMsg}`);
       }
       // Small delay between calls to be polite to the API
       if (i < targets.length - 1) await new Promise(r => setTimeout(r, 800));
@@ -316,7 +319,7 @@ export default function LiteracyAudit() {
                           {a && !a.error && a[cat.key] != null ? (
                             <span style={{ fontWeight: 700, fontSize: 16, color: scoreColor(a[cat.key]) }}>{a[cat.key]}</span>
                           ) : a?.error ? (
-                            <span style={{ color: '#dc2626', fontSize: 11 }}>err</span>
+                            <span style={{ color: '#dc2626', fontSize: 11 }} title={a.error}>⚠ err</span>
                           ) : (
                             <span style={{ color: 'var(--border)' }}>—</span>
                           )}
@@ -358,6 +361,13 @@ export default function LiteracyAudit() {
                               </div>
                             ))}
                           </div>
+                        </td>
+                      </tr>
+                    )}
+                    {isExpanded && a?.error && (
+                      <tr key={sub.id + '_err'} style={{ borderBottom: '1px solid var(--border)', background: 'rgba(220,38,38,0.05)' }}>
+                        <td colSpan={RVS_RUBRIC.length + 4} style={{ padding: '8px 14px', fontSize: 12, color: '#dc2626' }}>
+                          <strong>Error:</strong> {a.error}
                         </td>
                       </tr>
                     )}

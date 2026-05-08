@@ -34,14 +34,15 @@ SPELLING, CAPITALIZATION & PUNCTUATION (consider proportion of error to length a
   1 - Rarely applies correct capitalization, punctuation, spelling, and usage.
 `;
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  const key = process.env.GEMINI_KEY;
+  // Accept either key name
+  const key = process.env.GEMINI_KEY || process.env.VITE_GEMINI_KEY;
   if (!key) return res.status(500).json({ error: 'GEMINI_KEY not set on server' });
 
   const { text } = req.body;
-  if (!text?.trim()) return res.status(400).json({ error: 'text is required' });
+  if (!text || !text.trim()) return res.status(400).json({ error: 'text is required' });
 
   const prompt = `You are scoring a Grade 10 student's written submission using the RVS Year-End Writing Assessment Rubric.
 
@@ -59,7 +60,7 @@ LEVEL LABELS:
 
 STUDENT SUBMISSION:
 """
-${text.slice(0, 8000)}
+${text.slice(0, 6000)}
 """
 
 Respond ONLY with valid JSON, no extra text or markdown:
@@ -72,9 +73,10 @@ Respond ONLY with valid JSON, no extra text or markdown:
   "rationale": "<one brief sentence per category separated by | in rubric order>"
 }`;
 
+  let rawBody = '';
   try {
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + key,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -82,28 +84,31 @@ Respond ONLY with valid JSON, no extra text or markdown:
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { temperature: 0.1, maxOutputTokens: 512 },
         }),
-        signal: AbortSignal.timeout(30000),
       }
     );
+
+    rawBody = await geminiRes.text();
+
     if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      return res.status(502).json({ error: `Gemini ${geminiRes.status}: ${errText}` });
+      return res.status(502).json({ error: 'Gemini ' + geminiRes.status + ': ' + rawBody });
     }
-    const data = await geminiRes.json();
-    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    const data = JSON.parse(rawBody);
+    const raw = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text) || '';
     const cleaned = raw.replace(/```json\n?/gi, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleaned);
 
-    // Validate
-    const keys = ['content', 'audienceWordChoice', 'organization', 'sentenceStructure', 'conventions'];
-    for (const k of keys) {
-      const v = parsed[k];
+    const catKeys = ['content', 'audienceWordChoice', 'organization', 'sentenceStructure', 'conventions'];
+    for (var i = 0; i < catKeys.length; i++) {
+      var k = catKeys[i];
+      var v = parsed[k];
       if (!Number.isInteger(v) || v < 1 || v > 4) {
-        return res.status(502).json({ error: `Invalid score for ${k}: ${v}` });
+        return res.status(502).json({ error: 'Invalid score for ' + k + ': ' + v });
       }
     }
+
     return res.status(200).json(parsed);
   } catch (err) {
-    return res.status(502).json({ error: 'Gemini call failed: ' + err.message });
+    return res.status(502).json({ error: 'Function error: ' + err.message + (rawBody ? ' | raw: ' + rawBody.slice(0, 200) : '') });
   }
-}
+};
