@@ -74,14 +74,13 @@ async function scoreWithGemini(studentText) {
 }
 
 function getStudentText(submission) {
-  // Covers essay/position paper: stored in submission.content or submission.body
-  return (
-    submission.content ||
-    submission.body ||
-    submission.essay ||
-    submission.text ||
-    ''
-  ).trim();
+  // Plain text version (used for AI marking) — preferred
+  if (submission.plainResponse?.trim()) return submission.plainResponse.trim();
+  // HTML version — strip tags as fallback
+  if (submission.response?.trim()) {
+    return submission.response.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  return '';
 }
 
 function scoreColor(v) {
