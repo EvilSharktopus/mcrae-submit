@@ -179,7 +179,55 @@ export default function DebateAdmin({ submission, assignment, prevStudent, onPre
                 <div style={{ fontSize: 14, lineHeight: 1.6 }}>{debateContent.s3_opening}</div>
               </div>
             )}
-            
+
+            {debateContent.rounds?.some(r => r.studentArg) && (
+              <div className="card" style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stage 4 — AI Practice Rounds</div>
+                {['Round 1 — moderate pressure', 'Round 2 — ramping up', 'Round 3 — hardest challenge'].map((label, i) => {
+                  const round = debateContent.rounds[i];
+                  if (!round?.studentArg) return null;
+                  return (
+                    <div key={i} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-dim)', marginBottom: 10 }}>
+                        {label} {round.done ? '✓ Complete' : '(in progress)'}
+                      </div>
+                      {round.studentArg && (
+                        <div style={{ marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 3 }}>4.1 — Student argument</div>
+                          <div style={{ fontSize: 13, lineHeight: 1.5, padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: 6 }}>{round.studentArg}</div>
+                        </div>
+                      )}
+                      {round.geminiRebuttal && (
+                        <div style={{ marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, color: '#4285f4', marginBottom: 3 }}>4.2 — Gemini rebuttal</div>
+                          <div style={{ fontSize: 13, lineHeight: 1.5, padding: '8px 12px', borderLeft: '3px solid #4285f4', background: 'var(--bg-secondary)', borderRadius: '0 6px 6px 0' }}>{round.geminiRebuttal}</div>
+                        </div>
+                      )}
+                      {round.studentResp1 && (
+                        <div style={{ marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 3 }}>4.3 — Student response</div>
+                          <div style={{ fontSize: 13, lineHeight: 1.5, padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: 6 }}>{round.studentResp1}</div>
+                        </div>
+                      )}
+                      {round.geminiChallenge && (
+                        <div style={{ marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, color: '#db4437', marginBottom: 3 }}>4.4 — Gemini hardest challenge</div>
+                          <div style={{ fontSize: 13, lineHeight: 1.5, padding: '8px 12px', borderLeft: '3px solid #db4437', background: 'var(--bg-secondary)', borderRadius: '0 6px 6px 0' }}>{round.geminiChallenge}</div>
+                        </div>
+                      )}
+                      {round.studentResp2 && (
+                        <div>
+                          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 3 }}>4.5 — Student final response</div>
+                          <div style={{ fontSize: 13, lineHeight: 1.5, padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: 6 }}>{round.studentResp2}</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+
             {debateContent.s5_closing && (
               <div className="card" style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stage 5 — Closing argument ({wc(debateContent.s5_closing)} words)</div>
