@@ -56,63 +56,15 @@ const RVS_RUBRIC = [
   },
 ];
 
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY;
-
-function buildPrompt(studentText) {
-  const rubricText = RVS_RUBRIC.map(cat =>
-    `${cat.label.toUpperCase()}:\n` +
-    Object.entries(cat.descriptors).map(([k, v]) => `  ${k} - ${v}`).join('\n')
-  ).join('\n\n');
-
-  return `You are scoring a Grade 10 student's written submission using the RVS Year-End Writing Assessment Rubric.
-
-Score ONLY based on the text provided below. Do not infer, assume, or add anything not present in the writing.
-Consider proportion of errors to the length and complexity of the response for Sentence Structure and Conventions.
-
-RUBRIC (score 1–4 per category):
-${rubricText}
-
-LEVEL LABELS:
-4 = Meeting curricular outcomes with enriched understanding
-3 = Meeting curricular outcomes
-2 = Approaching curricular outcomes
-1 = Not yet meeting curricular outcomes
-
-STUDENT SUBMISSION:
-"""
-${studentText}
-"""
-
-Respond ONLY with valid JSON in this exact format, no extra text:
-{
-  "content": <integer 1-4>,
-  "audienceWordChoice": <integer 1-4>,
-  "organization": <integer 1-4>,
-  "sentenceStructure": <integer 1-4>,
-  "conventions": <integer 1-4>,
-  "rationale": "<one brief sentence per category, separated by the | character, in rubric order>"
-}`;
-}
-
 async function scoreWithGemini(studentText) {
-  const prompt = buildPrompt(studentText);
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 512 },
-      }),
-    }
-  );
-  if (!res.ok) throw new Error(`Gemini API ${res.status}: ${await res.text()}`);
-  const data = await res.json();
-  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  // Strip markdown code fences if present
-  const cleaned = raw.replace(/```json\n?/gi, '').replace(/```/g, '').trim();
-  const parsed = JSON.parse(cleaned);
+  const res = await fetch('/api/gemini-score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: studentText }),
+  });
+  if (!res.ok) throw new Error(`Score API ${res.status}: ${await res.text()}`);
+  const parsed = await res.json();
+  if (parsed.error) throw new Error(parsed.error);
   // Validate
   for (const cat of RVS_RUBRIC) {
     const v = parsed[cat.key];
@@ -185,7 +137,6 @@ export default function LiteracyAudit() {
   const unscored = submissions.filter(s => !s.rvsAudit);
 
   async function runAudit(targets) {
-    if (!GEMINI_KEY) { setError('Add VITE_GEMINI_KEY to your .env file first.'); return; }
     setScoring(true);
     setError('');
     setProgress({ current: 0, total: targets.length, name: '' });
@@ -225,19 +176,6 @@ export default function LiteracyAudit() {
   }
 
   const selectedAssignment = assignments.find(a => a.id === selectedId);
-
-  if (!GEMINI_KEY) {
-    return (
-      <div style={{ padding: 40, maxWidth: 600 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>📊 Literacy Audit</h1>
-        <div style={{ padding: 20, background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.3)', borderRadius: 8, fontSize: 14 }}>
-          <strong>Setup required:</strong> Add your Gemini API key to <code>.env</code>:<br /><br />
-          <code style={{ background: 'var(--bg-card)', padding: '4px 8px', borderRadius: 4 }}>VITE_GEMINI_KEY=your_key_here</code><br /><br />
-          Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>aistudio.google.com/apikey</a>, then restart the dev server.
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ padding: '24px', maxWidth: 1000, margin: '0 auto' }}>
