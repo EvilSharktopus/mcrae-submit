@@ -414,6 +414,7 @@ const UNITS_FOR = {
     { label: 'Immigration',             value: 'social-9/immigration' },
     { label: 'Mock Election',           value: 'social-9/mock-election' },
     { label: 'PAT Prep',               value: 'social-9/pat-prep' },
+    { label: 'Socratic Seminars',       value: 'social-9/socratic-seminars' },
     { label: 'Textbook',               value: 'social-9/textbook' },
     { label: 'YCJA',                   value: 'social-9/ycja' },
   ],
@@ -422,6 +423,7 @@ const UNITS_FOR = {
     { label: 'Historical Globalization',value: 'social-10/historical' },
     { label: 'Identity',               value: 'social-10/identity' },
     { label: 'Modern Globalization',   value: 'social-10/modern-globalization' },
+    { label: 'Socratic Seminars',       value: 'social-10/socratic-seminars' },
   ],
   'Social 20': [
     { label: 'Challenges to Canada',   value: 'social-20/challenges-to-canada' },
@@ -431,6 +433,7 @@ const UNITS_FOR = {
     { label: 'Internationalism',       value: 'social-20/internationalism' },
     { label: 'Model UN',               value: 'social-20/model-un' },
     { label: 'National Interest',      value: 'social-20/national-interest' },
+    { label: 'Socratic Seminars',       value: 'social-20/socratic-seminars' },
     { label: 'Ultranationalism',       value: 'social-20/ultranationalism' },
   ],
   'Social 30': [
@@ -440,6 +443,7 @@ const UNITS_FOR = {
     { label: 'Illiberalism',           value: 'social-30/illiberalism' },
     { label: 'Imposition',             value: 'social-30/imposition' },
     { label: 'Intro to Ideologies',    value: 'social-30/intro-to-ideologies' },
+    { label: 'Socratic Seminars',       value: 'social-30/socratic-seminars' },
   ],
   'Philosophy': [],
 };
