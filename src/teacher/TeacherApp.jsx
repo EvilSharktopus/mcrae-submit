@@ -7,6 +7,7 @@ import HelpRequests from './HelpRequests';
 import Grades from './Grades';
 import JigsawAdmin from './jigsaw/JigsawAdmin';
 import LiteracyAudit from './LiteracyAudit';
+import Comments from './Comments';
 import { db } from '../firebase';
 import { collection, query, where, onSnapshot, getDocs, limit } from 'firebase/firestore';
 import '../styles/globals.css';
@@ -76,6 +77,9 @@ export default function TeacherApp() {
             <button className={`app-nav__tab ${tab === 'audit' ? 'active' : ''}`} onClick={() => setTab('audit')}>
               📊 Literacy Audit
             </button>
+            <button className={`app-nav__tab ${tab === 'comments' ? 'active' : ''}`} onClick={() => setTab('comments')}>
+              💬 Comments
+            </button>
             <button className={`app-nav__tab ${tab === 'setup' ? 'active' : ''}`} onClick={() => setTab('setup')}>
               Setup
             </button>
@@ -91,6 +95,7 @@ export default function TeacherApp() {
       {tab === 'setup' && <Setup />}
       {tab === 'jigsaw' && <JigsawAdmin />}
       {tab === 'audit' && <LiteracyAudit />}
+      {tab === 'comments' && <Comments />}
     </>
   );
 }
