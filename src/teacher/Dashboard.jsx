@@ -395,9 +395,11 @@ export default function Dashboard() {
                     const openMs  = toMs(a.openAt);
                     const closeMs = toMs(a.closeAt);
                     const isTimed = !!(a.openAt || a.closeAt);
-                    const isOpen_ = isTimed
-                      ? !(openMs && now < openMs) && !(closeMs && now > closeMs)
-                      : a.isOpen !== false;
+                    const isOpen_ = a.isOpen === false
+                      ? false
+                      : isTimed
+                        ? !(openMs && now < openMs) && !(closeMs && now > closeMs)
+                        : true;
 
                     return (
                       <div key={a.id} className={`acard ${!isOpen_ ? 'acard--closed' : ''}`}
