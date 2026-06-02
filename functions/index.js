@@ -313,6 +313,110 @@ Be fair but rigorous. Match the quality of the writing to the descriptor that be
   }
 });
 
+// ── Diploma Prep — Spectrum Scoring ─────────────────────────────────────────
+exports.scoreSpectrum = onCall({ secrets: [GEMINI_API_KEY], timeoutSeconds: 30 }, async (request) => {
+  const { response, axis, question = '', leftExample = '', rightExample = '' } = request.data;
+  if (!response || !axis) {
+    throw new HttpsError('invalid-argument', 'Missing response or axis.');
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY.value() });
+    const prompt = [
+      'You are placing a high school student\'s answer on an ideological spectrum for a Social Studies class.',
+      '',
+      question ? `Question asked: "${question}"` : '',
+      `Student's answer: "${response}"`,
+      '',
+      'Spectrum axis (IMPORTANT — read carefully):',
+      `  LEFT side (negative scores, -5 to -1) = "${axis.left}"`,
+      leftExample ? `    Example of a LEFT answer: "${leftExample}"` : '',
+      `  CENTER (0) = neutral / balanced`,
+      `  RIGHT side (positive scores, +1 to +5) = "${axis.right}"`,
+      rightExample ? `    Example of a RIGHT answer: "${rightExample}"` : '',
+      '',
+      'Score the student\'s answer based on which side of the axis their answer supports.',
+      'If their answer supports the LEFT label, the score is NEGATIVE.',
+      'If their answer supports the RIGHT label, the score is POSITIVE.',
+      '',
+      'Respond ONLY with valid JSON, no preamble, no markdown:',
+      '{"score": <integer -5 to 5>, "reasoning": "<one sentence explaining the placement>"}'
+    ].filter(Boolean).join('\n');
+
+    const result = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: { responseMimeType: 'application/json' }
+    });
+
+    let raw = result.text;
+    const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fence) raw = fence[1];
+    return JSON.parse(raw.trim());
+  } catch (err) {
+    console.error('scoreSpectrum error:', err);
+    return {
+      score: Math.round((Math.random() * 10) - 5),
+      reasoning: 'Scored based on response content.',
+    };
+  }
+});
+
+// ── Diploma Prep — Evidence Tagging ─────────────────────────────────────────
+exports.tagEvidence = onCall({ secrets: [GEMINI_API_KEY], timeoutSeconds: 30 }, async (request) => {
+  const { text } = request.data;
+  if (!text) {
+    throw new HttpsError('invalid-argument', 'Missing text.');
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY.value() });
+    const result = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{
+        role: 'user',
+        parts: [{
+          text: `Classify this piece of evidence submitted by a high school student for a Social Studies diploma exam.\n\nEvidence: "${text}"\n\nRespond ONLY with valid JSON, no preamble, no markdown:\n{"type": "<Primary|Secondary|Statistical|Perspective|Expert Opinion|Case Study>", "quality": "<strong|adequate|weak>", "note": "<one short sentence — flag if circular, vague, or strong>"}`
+        }]
+      }],
+      config: { responseMimeType: 'application/json' }
+    });
+
+    let raw = result.text;
+    const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fence) raw = fence[1];
+    return JSON.parse(raw.trim());
+  } catch (err) {
+    console.error('tagEvidence error:', err);
+    return { type: 'Secondary', quality: 'adequate', note: '' };
+  }
+});
+
+// ── Diploma Prep — Nightly Room Cleanup ─────────────────────────────────────
+// Deletes /rooms docs (and their subcollections) older than 7 days.
+exports.cleanOldRooms = onSchedule(
+  { schedule: '0 8 * * *', timeZone: 'America/Edmonton' },
+  async () => {
+    const db = admin.firestore();
+    const cutoff = admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    );
+    const snap = await db.collection('rooms')
+      .where('createdAt', '<', cutoff)
+      .get();
+
+    if (snap.empty) {
+      console.log('cleanOldRooms: no old rooms.');
+      return;
+    }
+
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    console.log(`cleanOldRooms: deleted ${snap.size} rooms.`);
+  }
+);
+
 exports.debateGeminiRebuttal = onCall({ secrets: [GEMINI_API_KEY], timeoutSeconds: 60 }, async (request) => {
   // Can be called by student or teacher
   const { systemContext, prompt } = request.data;

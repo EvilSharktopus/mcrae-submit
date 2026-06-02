@@ -343,32 +343,138 @@ function GroupedAssignmentList({ groupMap, groupKeys, rubricId, onAssignmentUpda
 }
 
 
+// ── Rubric Editor (inline edit for existing rubrics) ───────────────────────
+function RubricEditor({ rubric, onSaved, onCancel }) {
+  const [name, setName] = useState(rubric.name);
+  const [categories, setCategories] = useState(
+    rubric.categories ? rubric.categories.map(c => ({
+      name: c.name,
+      descriptors: c.descriptors ? c.descriptors.map(d => ({ ...d })) : [{ text: '', points: 1 }]
+    })) : [{ name: '', descriptors: [{ text: '', points: 1 }] }]
+  );
+  const [saving, setSaving] = useState(false);
+
+  const addCategory = () => setCategories(c => [...c, { name: '', descriptors: [{ text: '', points: 1 }] }]);
+  const removeCategory = (ci) => setCategories(c => c.filter((_, i) => i !== ci));
+  const updateCatName = (ci, val) => setCategories(c => c.map((cat, i) => i === ci ? { ...cat, name: val } : cat));
+  const addDescriptor = (ci) => setCategories(c => c.map((cat, i) =>
+    i === ci ? { ...cat, descriptors: [...cat.descriptors, { text: '', points: 1 }] } : cat
+  ));
+  const removeDescriptor = (ci, di) => setCategories(c => c.map((cat, i) =>
+    i === ci ? { ...cat, descriptors: cat.descriptors.filter((_, j) => j !== di) } : cat
+  ));
+  const updateDescriptor = (ci, di, field, val) => setCategories(c => c.map((cat, i) =>
+    i === ci ? {
+      ...cat,
+      descriptors: cat.descriptors.map((d, j) => j === di ? { ...d, [field]: field === 'points' ? Number(val) : val } : d)
+    } : cat
+  ));
+
+  const handleSave = async () => {
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, 'rubrics', rubric.id), { name: name.trim(), categories });
+      onSaved?.();
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{ padding: '14px 16px', background: 'var(--bg-input)', borderTop: '1px solid var(--border)' }}>
+      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: 'var(--accent)' }}>✏️ Editing Rubric</div>
+      <div className="field" style={{ marginBottom: 10 }}>
+        <label>Rubric Name</label>
+        <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Socratic Seminar Rubric" />
+      </div>
+      {categories.map((cat, ci) => (
+        <div key={ci} className="rubric-cat-block">
+          <div className="rubric-cat-block__header">
+            <input
+              className="rubric-cat-name"
+              value={cat.name}
+              onChange={e => updateCatName(ci, e.target.value)}
+              placeholder={`Category ${ci + 1} name`}
+            />
+            <button className="btn btn--secondary btn--sm" onClick={() => removeCategory(ci)} title="Remove category">✕</button>
+          </div>
+          {cat.descriptors.map((d, di) => (
+            <div key={di} className="descriptor-row">
+              <input
+                className="descriptor-text"
+                value={d.text}
+                onChange={e => updateDescriptor(ci, di, 'text', e.target.value)}
+                placeholder="Descriptor text"
+              />
+              <input
+                type="number"
+                className="descriptor-points"
+                value={d.points}
+                onChange={e => updateDescriptor(ci, di, 'points', e.target.value)}
+                min="0"
+              />
+              <span className="descriptor-pts-label">pts</span>
+              <button className="btn btn--secondary btn--sm" onClick={() => removeDescriptor(ci, di)} title="Remove">✕</button>
+            </div>
+          ))}
+          <button className="btn btn--secondary btn--sm" onClick={() => addDescriptor(ci)} style={{ marginTop: 4 }}>+ Descriptor</button>
+        </div>
+      ))}
+      <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+        <button className="btn btn--secondary" onClick={addCategory}>+ Category</button>
+        <button className="btn btn--primary" onClick={handleSave} disabled={saving || !name.trim()}>
+          {saving ? 'Saving...' : 'Save Changes'}
+        </button>
+        <button className="btn btn--secondary" onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Saved Lists ─────────────────────────────────────────────────────────────
-function SavedRubrics({ rubrics, assignments, onAssignmentUpdate }) {
+function SavedRubrics({ rubrics, assignments, onAssignmentUpdate, onRubricEdited }) {
   const [expandedId, setExpandedId] = useState(null);
+  const [editingId,  setEditingId]  = useState(null);
   if (!rubrics.length) return null;
   return (
     <div className="setup-section">
       <h3 className="setup-list-title">Saved Rubrics ({rubrics.length})</h3>
       {rubrics.map(r => {
         const isExpanded = expandedId === r.id;
+        const isEditing  = editingId  === r.id;
         const activeAssignments = assignments.filter(a => !a.archived);
         return (
           <div key={r.id} className="card" style={{ marginBottom: 8, padding: 0, overflow: 'hidden' }}>
             {/* Header row */}
-            <div
-              className="setup-list-item"
-              style={{ cursor: 'pointer', padding: '10px 14px' }}
-              onClick={() => setExpandedId(isExpanded ? null : r.id)}
-            >
-              <strong style={{ flex: 1 }}>{r.name}</strong>
+            <div className="setup-list-item" style={{ padding: '10px 14px' }}>
+              <strong
+                style={{ flex: 1, cursor: 'pointer' }}
+                onClick={() => { setExpandedId(isExpanded ? null : r.id); setEditingId(null); }}
+              >{r.name}</strong>
               <span style={{ fontSize: 12, color: 'var(--text-dim)', marginRight: 12 }}>
                 {r.categories?.length || 0} categories
               </span>
-              <span style={{ fontSize: 12, color: 'var(--accent)' }}>
+              <button
+                className="btn btn--secondary btn--sm"
+                style={{ marginRight: 8, fontSize: 11 }}
+                onClick={e => { e.stopPropagation(); setEditingId(isEditing ? null : r.id); setExpandedId(null); }}
+              >
+                {isEditing ? '✕ Cancel' : '✏️ Edit'}
+              </button>
+              <span
+                style={{ fontSize: 12, color: 'var(--accent)', cursor: 'pointer' }}
+                onClick={() => { setExpandedId(isExpanded ? null : r.id); setEditingId(null); }}
+              >
                 {isExpanded ? '▲ Close' : '▼ Apply to assignments'}
               </span>
             </div>
+            {/* Inline rubric editor */}
+            {isEditing && (
+              <RubricEditor
+                rubric={r}
+                onSaved={() => { setEditingId(null); onRubricEdited?.(); }}
+                onCancel={() => setEditingId(null)}
+              />
+            )}
             {/* Expandable assignment checklist — grouped by course+stream */}
             {isExpanded && (() => {
               // Build ordered group keys: "Social 9", "Social 10-1", etc.
@@ -928,6 +1034,7 @@ export default function Setup() {
             rubrics={rubrics}
             assignments={assignments}
             onAssignmentUpdate={(id, changes) => setAssignments(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a))}
+            onRubricEdited={load}
           />
         </div>
         <div>

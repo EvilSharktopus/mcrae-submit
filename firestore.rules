@@ -50,18 +50,132 @@ service cloud.firestore {
     // Enrollments — one per student per section (deterministic ID)
     // Teacher reads all; students read/create/delete their own
     match /enrollments/{id} {
-      allow read: if request.auth.token.email == 'amcrae@rvschools.ab.ca'
-        || resource.data.studentEmail == request.auth.token.email;
+      allow read: if request.auth != null
+        && (request.auth.token.email == 'amcrae@rvschools.ab.ca'
+            || request.auth.token.email == resource.data.studentEmail);
       allow create, update: if request.auth != null
         && request.resource.data.studentEmail == request.auth.token.email;
-      allow delete: if request.auth.token.email == 'amcrae@rvschools.ab.ca'
-        || resource.data.studentEmail == request.auth.token.email;
+      allow delete: if request.auth != null
+        && (request.auth.token.email == 'amcrae@rvschools.ab.ca'
+            || request.auth.token.email == resource.data.studentEmail);
+    }
+
+    // Comment bank — teacher only (personal report card comment templates)
+    match /comment_bank/{id} {
+      allow read, write: if request.auth.token.email == 'amcrae@rvschools.ab.ca';
     }
 
     // Archived submission years (submissions_YYYY_YYYY) — teacher only
     match /{archiveCollection}/{id} {
       allow read, write: if request.auth.token.email == 'amcrae@rvschools.ab.ca'
         && archiveCollection.matches('submissions_[0-9]{4}_[0-9]{4}');
+    }
+
+    // Blood Minerals activity — no auth (public classroom activity)
+    // sessions/minerals and all subcollections are open read/write
+    match /sessions/minerals {
+      allow read, write: if true;
+    }
+    match /sessions/minerals/{subcollection}/{document=**} {
+      allow read, write: if true;
+    }
+    // ── NGO Simulation ──────────────────────────────────────────
+    // Helper: is the requesting user a teacher?
+    function isTeacher() {
+      return request.auth != null
+        && request.auth.token.email == 'amcrae@rvschools.ab.ca';
+    }
+
+    // ngo_settings — public read (needed before auth completes); teacher writes
+    match /ngo_settings/{id} {
+      allow read: if true;
+      allow write: if isTeacher();
+    }
+
+    // ngo_groups — authenticated users read all; members write their own group
+    match /ngo_groups/{groupId} {
+      allow read: if request.auth != null;
+      // Teacher can write anything (approve, send back, phase controls)
+      allow write: if isTeacher();
+      // Members can update their own group (stage fields, join)
+      allow update: if request.auth != null
+        && (resource.data.members.hasAny([request.auth.uid])
+            || request.resource.data.members.hasAny([request.auth.uid]));
+      allow create: if request.auth != null;
+    }
+
+    // ngo_stage1 and ngo_stage2 - logged in users can read and write
+    match /ngo_stage1/{stageId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /ngo_stage2/{stageId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ngo_scorecards — students write their own scorecard; teacher reads all
+    // Students cannot read other students' individual scorecards
+    match /ngo_scorecards/{scorecardId} {
+      allow read: if isTeacher()
+        || (request.auth != null && resource.data.scorerId == request.auth.uid);
+      allow create, update: if request.auth != null
+        && request.resource.data.scorerId == request.auth.uid;
+    }
+
+    // ngo_funding — students write their own allocation; teacher reads all
+    // Students cannot see others' allocations
+    match /ngo_funding/{uid} {
+      allow read: if isTeacher() || request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+    // ── Political Gravity ────────────────────────────────────────
+    // Helper: is this user the political gravity teacher or a promoted teacher?
+    function isPGTeacher() {
+      return request.auth != null
+        && request.auth.token.email == 'amcrae@rvschools.ab.ca';
+    }
+
+    // users — each user reads/writes only their own doc; teacher reads all
+    match /users/{uid} {
+      allow read: if request.auth != null
+        && (request.auth.uid == uid || isPGTeacher());
+      allow create: if request.auth != null
+        && request.auth.uid == uid;
+      allow update: if request.auth != null
+        && (request.auth.uid == uid || isPGTeacher());
+    }
+
+    // readings — any authenticated user reads; teacher writes
+    match /readings/{id} {
+      allow read: if request.auth != null;
+      allow write: if isPGTeacher();
+    }
+
+    // plots — students write their own; teacher reads all; students read their own
+    match /plots/{id} {
+      allow read: if request.auth != null
+        && (isPGTeacher() || resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // reflections — students write their own; teacher reads all; students read their own
+    match /reflections/{id} {
+      allow read: if request.auth != null
+        && (isPGTeacher() || resource.data.userId == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // seminar_comments — any authenticated user reads and creates their own
+    match /seminar_comments/{id} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
     }
   }
 }

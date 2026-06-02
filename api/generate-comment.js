@@ -24,28 +24,15 @@ export default async function handler(req, res) {
     ? `Additional qualitative context (do NOT mention assignments by name): ${keyAssignmentSignal}`
     : '';
 
-  const prompt = `You are writing a divisionally approved report card comment for a high school Social Studies student. Follow ALL rules exactly.
+  const prompt = `Write a report card comment for a high school Social Studies student. Here's the situation:
 
-RULES:
-- 4–5 sentences, paragraph style (no bullet points)
-- Use the student's first name naturally at least once
-- Include: one clear strength, one area for improvement, one concrete suggestion for how to improve
-- Reference the broad curricular lens provided
-- NEVER mention specific grades, percentages, or numbers
-- NEVER mention specific assignment names or titles
-- NEVER mention assignment completion or work habits
-- Tone must reflect the overall performance level provided
-- Write in third person (e.g. "${firstName} demonstrates...")
-- Sound like a thoughtful human teacher, not AI
-- Output only the comment, nothing else
-
-STUDENT INFO:
-- First name: ${firstName}
-- Overall performance level: ${tone} — ${toneDescriptions[tone] || ''}
-- Curricular lens (broad topic area): ${curricularLens}
+The student's name is ${firstName}. Their overall performance is ${tone} — ${toneDescriptions[tone] || ''}.
+The class has been focused on ${curricularLens}.
 ${keySignalNote}
 
-Write the comment now:`;
+Write 4–5 sentences as if you're a real teacher who knows this kid. Use ${firstName}'s name at least once. Mention something they're genuinely doing well, one thing they could push further on, and a specific suggestion for how to get there. Keep it grounded in the subject area (${curricularLens}) without sounding like a textbook. 
+
+Don't mention grades, percentages, specific assignment names, or whether they handed things in. Third person only. Don't explain yourself or add any notes — just write the comment.`;
 
   let rawBody = '';
   try {

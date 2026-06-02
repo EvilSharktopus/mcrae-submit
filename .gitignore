@@ -4,3 +4,4 @@ dist/
 functions/node_modules/
 scratch/
 *firebase-adminsdk*.json
+.vercel

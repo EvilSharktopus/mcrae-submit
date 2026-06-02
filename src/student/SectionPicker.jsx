@@ -11,12 +11,13 @@ export default function SectionPicker({ currentEnrollment, onEnrolled }) {
   const { user } = useAuth();
   const [sections,  setSections]  = useState([]);
   const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState(null);
   const [enrolling, setEnrolling] = useState(null); // sectionId being enrolled
 
   useEffect(() => {
     getDocs(collection(db, 'sections'))
       .then(snap => setSections(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-      .catch(console.error)
+      .catch(err => { console.error(err); setError(err); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -70,7 +71,13 @@ export default function SectionPicker({ currentEnrollment, onEnrolled }) {
         <p className="section-picker__subtitle">Pick your class to get started</p>
       </div>
 
-      {activeSections.length === 0 ? (
+      {error ? (
+        <div className="empty">
+          <span className="empty__icon">⚠️</span>
+          <p>Having trouble connecting — try signing out and back in.</p>
+          <button onClick={() => { setError(null); setLoading(true); getDocs(collection(db, 'sections')).then(snap => setSections(snap.docs.map(d => ({ id: d.id, ...d.data() })))).catch(err => { console.error(err); setError(err); }).finally(() => setLoading(false)); }} style={{ marginTop: 12, padding: '8px 20px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--bg-card)', color: 'var(--text)', cursor: 'pointer', fontSize: 13 }}>Retry</button>
+        </div>
+      ) : activeSections.length === 0 ? (
         <div className="empty">
           <span className="empty__icon">🏫</span>
           <p>No classes have been set up yet — check back soon!</p>

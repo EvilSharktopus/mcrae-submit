@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Diploma Prep (RTD) — no-auth classroom tool ─────────────────────
+    // Room code is the access gate. Rooms are short-lived (7-day cleanup).
+    match /rooms/{roomCode} {
+      allow read, write: if true;
+
+      match /submissions/{submissionId} {
+        allow read: if true;
+        allow create: if true;
+        allow update: if true;
+        allow delete: if false;
+      }
+
+      match /briefcases/{alias}/cards/{cardId} {
+        allow read, write: if true;
+      }
+    }
+  }
+}

@@ -44,6 +44,7 @@ function NavTab({ to, label, badge }) {
 export default function StudentApp() {
   const { user, signOut, isTeacher } = useAuth();
   const [enrollment,    setEnrollment]    = useState(undefined);
+  const [enrollError,   setEnrollError]   = useState(null);
   const [showPicker,    setShowPicker]    = useState(false);
   const [unviewedCount, setUnviewedCount] = useState(0);
   const [jigsawActive,  setJigsawActive]  = useState(false);
@@ -73,12 +74,14 @@ export default function StudentApp() {
 
   async function loadEnrollment() {
     try {
+      setEnrollError(null);
       const snap = await getDocs(
         query(collection(db, 'enrollments'), where('studentEmail', '==', user.email))
       );
       setEnrollment(snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() });
     } catch (err) {
       console.error('Enrollment check failed:', err);
+      setEnrollError(err);
       setEnrollment(null);
     }
   }
@@ -90,6 +93,19 @@ export default function StudentApp() {
 
   if (enrollment === undefined) {
     return <div className="loading-screen"><span className="spinner" /></div>;
+  }
+
+  if (enrollError) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 12, padding: 24, textAlign: 'center' }}>
+        <span style={{ fontSize: 40 }}>⚠️</span>
+        <p style={{ fontSize: 15, color: 'var(--text-dim)' }}>Having trouble connecting. Try signing out and back in.</p>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={() => { setEnrollment(undefined); loadEnrollment(); }} style={{ padding: '8px 20px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--bg-card)', color: 'var(--text)', cursor: 'pointer', fontSize: 13 }}>Retry</button>
+          <button onClick={signOut} style={{ padding: '8px 20px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--bg-card)', color: '#ff6b6b', cursor: 'pointer', fontSize: 13 }}>Sign Out</button>
+        </div>
+      </div>
+    );
   }
 
   const sectionLabel = enrollment
