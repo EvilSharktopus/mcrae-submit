@@ -67,6 +67,7 @@ export default function SubmissionPage() {
   const velocityCheck       = useRef([]);
   const initialContentSet   = useRef(false);
   const saveTimer           = useRef(null);
+  const dirtyRef            = useRef(false);
   const splitRef          = useRef(null);
   const isDraggingRef     = useRef(false);
   const [splitPct,     setSplitPct]     = useState(40);
@@ -106,7 +107,39 @@ export default function SubmissionPage() {
     document.body.style.userSelect = 'none';
   };
 
-  // ── Session tracking (focus/blur) ────────────────────────────────────────
+  // ── Synchronous save (for beforeunload / visibilitychange) ────────────────
+  const flushSave = useCallback(() => {
+    if (!editorRef.current || !dirtyRef.current) return;
+    clearTimeout(saveTimer.current);
+    const html  = editorRef.current.innerHTML;
+    const plain = editorRef.current.innerText || '';
+    const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
+    const integrityLog = calculateIntegrity(wc);
+    // Fire-and-forget — we can't await in beforeunload
+    setDoc(docRef, {
+      response: html, plainResponse: plain.trim(), wordCount: wc,
+      integrityLog, lastSaved: serverTimestamp(),
+    }, { merge: true }).then(() => {
+      dirtyRef.current = false;
+      setSaveStatus('saved');
+      setLastSaved(new Date());
+    }).catch(err => console.error('Flush save failed:', err));
+  }, [assignmentId, user.email]);
+
+  // ── localStorage backup ──────────────────────────────────────────────────
+  const localBackupKey = `draft__${assignmentId}__${user.email}`;
+  const saveLocalBackup = useCallback(() => {
+    if (!editorRef.current) return;
+    try {
+      localStorage.setItem(localBackupKey, JSON.stringify({
+        html: editorRef.current.innerHTML,
+        plain: (editorRef.current.innerText || '').trim(),
+        ts: Date.now(),
+      }));
+    } catch {}
+  }, [localBackupKey]);
+
+  // ── Session tracking (focus/blur) + save on visibility change ────────────
   useEffect(() => {
     const onFocus = () => {
       if (!lastFocusTime.current) lastFocusTime.current = Date.now();
@@ -119,16 +152,32 @@ export default function SubmissionPage() {
       }
       sessionLog.current.push({ type: 'blur', time: Date.now() });
     };
+    const onVisChange = () => {
+      if (document.hidden) flushSave();
+    };
+    const onBeforeUnload = (e) => {
+      if (dirtyRef.current) {
+        flushSave();
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
     window.addEventListener('focus', onFocus);
     window.addEventListener('blur', onBlur);
+    document.addEventListener('visibilitychange', onVisChange);
+    window.addEventListener('beforeunload', onBeforeUnload);
     return () => {
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisChange);
+      window.removeEventListener('beforeunload', onBeforeUnload);
       if (lastFocusTime.current) {
         accumulatedActiveMS.current += (Date.now() - lastFocusTime.current);
       }
+      // Component unmounting — flush any pending save
+      flushSave();
     };
-  }, []);
+  }, [flushSave]);
 
   // ── Load assignment + existing draft ─────────────────────────────────────
   useEffect(() => {
@@ -211,7 +260,23 @@ export default function SubmissionPage() {
   useEffect(() => {
     if (loading || !editorRef.current || initialContentSet.current) return;
     initialContentSet.current = true;
-    if (draftData?.response) {
+
+    // Check localStorage backup — use it if it's newer than Firestore
+    let usedBackup = false;
+    try {
+      const backup = JSON.parse(localStorage.getItem(localBackupKey) || 'null');
+      const firestoreTs = draftData?.lastSaved?.toDate?.()?.getTime() || 0;
+      if (backup && backup.ts > firestoreTs && backup.plain?.length > (draftData?.plainResponse?.length || 0)) {
+        editorRef.current.innerHTML = backup.html;
+        usedBackup = true;
+        console.log('Restored from localStorage backup (newer than Firestore)');
+        // Immediately save the backup to Firestore
+        dirtyRef.current = true;
+        scheduleSave();
+      }
+    } catch {}
+
+    if (!usedBackup && draftData?.response) {
       editorRef.current.innerHTML = draftData.response;
     }
     updateWordCount();
@@ -296,6 +361,7 @@ export default function SubmissionPage() {
           integrityLog,
           lastSaved:     serverTimestamp(),
         }, { merge: true });
+        dirtyRef.current = false;
         const now = new Date();
         setLastSaved(now);
         setSaveStatus('saved');
@@ -366,6 +432,8 @@ export default function SubmissionPage() {
       }
     }
 
+    dirtyRef.current = true;
+    saveLocalBackup();
     scheduleSave();
   };
 
@@ -482,6 +550,8 @@ export default function SubmissionPage() {
       }, { merge: true });
       setDraftData(prev => ({ ...prev, submitted: true, isResubmission }));
       setIsRevisionMode(false);
+      dirtyRef.current = false;
+      try { localStorage.removeItem(localBackupKey); } catch {}
     } finally {
       setSubmitting(false);
     }
@@ -558,7 +628,7 @@ export default function SubmissionPage() {
     <div className="submission-page">
       {/* Header */}
       <div className="submission-header">
-        <button className="btn btn--secondary btn--sm" onClick={() => navigate('/')}>← Back</button>
+        <button className="btn btn--secondary btn--sm" onClick={() => { flushSave(); navigate('/'); }}>← Back</button>
         <div className="submission-header__info">
           <h1 className="submission-header__title">{assignment.name}</h1>
           {assignment.stream && <span className="submission-header__stream">{assignment.stream}</span>}
