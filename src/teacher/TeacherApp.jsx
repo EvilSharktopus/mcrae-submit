@@ -5,12 +5,13 @@ import Dashboard from './Dashboard';
 import Setup from './Setup';
 import HelpRequests from './HelpRequests';
 import Grades from './Grades';
-import JigsawAdmin from './jigsaw/JigsawAdmin';
+// JIGSAW DISABLED — uncomment to re-enable
+// import JigsawAdmin from './jigsaw/JigsawAdmin';
 import LiteracyAudit from './LiteracyAudit';
 import Comments from './Comments';
 import ToMark from './ToMark';
 import { db } from '../firebase';
-import { collection, query, where, onSnapshot, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import '../styles/globals.css';
 
 export default function TeacherApp() {
@@ -18,7 +19,8 @@ export default function TeacherApp() {
   const [tab, setTab] = useState('dashboard');
   const [helpCount,   setHelpCount]   = useState(0);
   const [toMarkCount, setToMarkCount] = useState(0);
-  const [jigsawAvailable, setJigsawAvailable] = useState(false);
+  // JIGSAW DISABLED — uncomment to re-enable
+  // const [jigsawAvailable, setJigsawAvailable] = useState(false);
 
   // Live count of unresolved help requests
   useEffect(() => {
@@ -40,16 +42,16 @@ export default function TeacherApp() {
     return () => unsub();
   }, []);
 
-  // Check if jigsaw has ever been set up
-  useEffect(() => {
-    async function checkJigsaw() {
-      try {
-        const snap = await getDocs(query(collection(db, 'jigsawActivities'), limit(1)));
-        setJigsawAvailable(!snap.empty);
-      } catch { setJigsawAvailable(false); }
-    }
-    checkJigsaw();
-  }, []);
+  // JIGSAW DISABLED — uncomment to re-enable
+  // useEffect(() => {
+  //   async function checkJigsaw() {
+  //     try {
+  //       const snap = await getDocs(query(collection(db, 'jigsawActivities'), limit(1)));
+  //       setJigsawAvailable(!snap.empty);
+  //     } catch { setJigsawAvailable(false); }
+  //   }
+  //   checkJigsaw();
+  // }, []);
 
   return (
     <>
@@ -106,11 +108,7 @@ export default function TeacherApp() {
                 </span>
               )}
             </button>
-            {jigsawAvailable && (
-              <button className={`app-nav__tab ${tab === 'jigsaw' ? 'active' : ''}`} onClick={() => setTab('jigsaw')}>
-                🧩 Jigsaw
-              </button>
-            )}
+
             <button className={`app-nav__tab ${tab === 'audit' ? 'active' : ''}`} onClick={() => setTab('audit')}>
               📊 Literacy Audit
             </button>
@@ -130,7 +128,8 @@ export default function TeacherApp() {
       {tab === 'grades'    && <Grades />}
       {tab === 'help'      && <HelpRequests />}
       {tab === 'setup'     && <Setup />}
-      {tab === 'jigsaw'    && <JigsawAdmin />}
+      {/* JIGSAW DISABLED — uncomment to re-enable */}
+      {/* {tab === 'jigsaw'    && <JigsawAdmin />} */}
       {tab === 'audit'     && <LiteracyAudit />}
       {tab === 'comments'  && <Comments />}
     </>

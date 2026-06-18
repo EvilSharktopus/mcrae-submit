@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import DOMPurify from 'dompurify';
 import { db } from '../../firebase';
 import { collection, doc, onSnapshot, updateDoc, runTransaction, serverTimestamp, increment } from 'firebase/firestore';
 import { useAuth } from '../../auth/AuthContext';
@@ -162,10 +163,10 @@ export default function JigsawResearch({ activityId, assignment, setAssignment }
                 {prompts.length > 0 ? prompts.map((p, i) => (
                   <div key={i} style={{ marginBottom: 24 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 8 }}>{p}</div>
-                    <div className="editor-body" dangerouslySetInnerHTML={{ __html: responses[i] || '(No response)' }} />
+                    <div className="editor-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(responses[i] || '(No response)') }} />
                   </div>
                 )) : (
-                  <div className="editor-body" dangerouslySetInnerHTML={{ __html: assignment.response || '(No response)' }} />
+                  <div className="editor-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(assignment.response || '(No response)') }} />
                 )}
               </div>
             ) : (

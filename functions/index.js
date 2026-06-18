@@ -174,7 +174,7 @@ exports.sendMark = onCall({ secrets: [RESEND_API_KEY] }, async (request) => {
   // ── Send via Resend ───────────────────────────────────────────────────────
   const { Resend } = require('resend');
   const apiKey = RESEND_API_KEY.value();
-  console.log(`[sendMark] Using API key prefix: ${apiKey?.slice(0, 10)}... to: ${studentEmail}`);
+
   const resend = new Resend(apiKey);
 
   const { data, error } = await resend.emails.send({
@@ -316,6 +316,9 @@ Be fair but rigorous. Match the quality of the writing to the descriptor that be
 // ── Diploma Prep — Spectrum Scoring ─────────────────────────────────────────
 exports.scoreSpectrum = onCall({ secrets: [GEMINI_API_KEY], timeoutSeconds: 30 }, async (request) => {
   const { response, axis, question = '', leftExample = '', rightExample = '' } = request.data;
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Must be signed in.');
+  }
   if (!response || !axis) {
     throw new HttpsError('invalid-argument', 'Missing response or axis.');
   }
@@ -365,6 +368,9 @@ exports.scoreSpectrum = onCall({ secrets: [GEMINI_API_KEY], timeoutSeconds: 30 }
 // ── Diploma Prep — Evidence Tagging ─────────────────────────────────────────
 exports.tagEvidence = onCall({ secrets: [GEMINI_API_KEY], timeoutSeconds: 30 }, async (request) => {
   const { text } = request.data;
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Must be signed in.');
+  }
   if (!text) {
     throw new HttpsError('invalid-argument', 'Missing text.');
   }
@@ -420,6 +426,9 @@ exports.cleanOldRooms = onSchedule(
 exports.debateGeminiRebuttal = onCall({ secrets: [GEMINI_API_KEY], timeoutSeconds: 60 }, async (request) => {
   // Can be called by student or teacher
   const { systemContext, prompt } = request.data;
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Must be signed in.');
+  }
   if (!prompt || !systemContext) {
     throw new HttpsError('invalid-argument', 'Missing prompt or systemContext.');
   }

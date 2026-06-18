@@ -6,7 +6,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
 import { isPastCutoff, CUTOFF_HOUR, CUTOFF_MIN } from '../utils/cutoff';
 
-export default function AssignmentList({ section, jigsawActive }) {
+export default function AssignmentList({ section }) {
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState({});
   const [loading,     setLoading]     = useState(true);
@@ -104,22 +104,7 @@ export default function AssignmentList({ section, jigsawActive }) {
         </div>
       )}
 
-      {jigsawActive && (
-        <div 
-          className="jigsaw-banner" 
-          onClick={() => navigate('/jigsaw')}
-          role="button" 
-          tabIndex={0} 
-          onKeyDown={e => e.key === 'Enter' && navigate('/jigsaw')}
-        >
-          <div className="jigsaw-banner__icon">🧩</div>
-          <div>
-            <div className="jigsaw-banner__title">Live Jigsaw Activity</div>
-            <div className="jigsaw-banner__sub">Join your group for collaborative research</div>
-          </div>
-          <div className="jigsaw-banner__arrow">→</div>
-        </div>
-      )}
+
 
       {section && (
         <p style={{ fontSize: 13, color: 'var(--text-dim)', marginBottom: 20, marginTop: -8 }}>

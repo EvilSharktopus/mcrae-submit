@@ -236,7 +236,7 @@ export default function DebatePage() {
     });
   };
 
-  if (loading) return <div style={{padding: 40}}>Loading...</div>;
+  if (loading) return <div className="loading-screen"><span className="spinner" /></div>;
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto', paddingBottom: '100px' }}>

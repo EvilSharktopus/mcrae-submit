@@ -4,7 +4,6 @@ import { db } from '../firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, writeBatch, query, where } from 'firebase/firestore';
 import { exportCSV, stripHtml, currentSchoolYear } from '../utils/exportUtils';
 import SectionsPanel from './SectionsPanel';
-import scrapedAssignments from '../data/scraped-assignments.json';
 import { useAuth } from '../auth/AuthContext';
 import '../styles/setup.css';
 
@@ -898,10 +897,12 @@ export default function Setup() {
     if (!window.confirm(`Archive ${sSnap.size} submission${sSnap.size !== 1 ? 's' : ''} to "submissions_${year}"?\n\nThis clears the active dashboard. All data is preserved in Firestore.`)) return;
     setArchiving(true);
     try {
-      // Batch in chunks of 250 (2 ops per doc ≤ 500 limit)
       const all = sSnap.docs;
-      for (let i = 0; i < all.length; i += 250) {
-        const chunk = all.slice(i, i + 250);
+      // Chunk size of 20 (40 ops) keeps each batch well under Firestore's 10 MB payload limit.
+      // Large submissions (essays + rubric + integrity logs) can easily make 250-doc batches too big.
+      const CHUNK = 20;
+      for (let i = 0; i < all.length; i += CHUNK) {
+        const chunk = all.slice(i, i + CHUNK);
         const batch = writeBatch(db);
         chunk.forEach(d => {
           batch.set(doc(db, `submissions_${year}`, d.id), d.data());
@@ -915,6 +916,7 @@ export default function Setup() {
       alert('Error archiving. Check console.');
     } finally { setArchiving(false); }
   }
+
 
   async function simulateStudent() {
     if (!studentViewCourse) { alert('Please select a course to simulate.'); return; }

@@ -1,19 +1,18 @@
 // src/student/StudentApp.jsx
 import { useEffect, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useMatch } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { useNavigate, useMatch } from 'react-router-dom';
 import AssignmentList from './AssignmentList';
 import SubmissionPage from './SubmissionPage';
 import DebatePage from './DebatePage';
 import SectionPicker from './SectionPicker';
 import MarkedList     from './MarkedList';
 import MarkedDetail   from './MarkedDetail';
-import JigsawApp      from './jigsaw/JigsawApp';
+// JIGSAW DISABLED — uncomment to re-enable
+// import JigsawApp      from './jigsaw/JigsawApp';
 import '../styles/globals.css';
-import { limit } from 'firebase/firestore';
 
 function NavTab({ to, label, badge }) {
   const navigate = useNavigate();
@@ -47,18 +46,21 @@ export default function StudentApp() {
   const [enrollError,   setEnrollError]   = useState(null);
   const [showPicker,    setShowPicker]    = useState(false);
   const [unviewedCount, setUnviewedCount] = useState(0);
-  const [jigsawActive,  setJigsawActive]  = useState(false);
+  // JIGSAW DISABLED — uncomment to re-enable
+  // const [jigsawActive,  setJigsawActive]  = useState(false);
 
   useEffect(() => { loadEnrollment(); }, [user.email]);
   useEffect(() => { loadUnviewed(); },  [user.email]);
-  useEffect(() => { checkJigsaw(); }, []);
+  // JIGSAW DISABLED — uncomment to re-enable
+  // useEffect(() => { checkJigsaw(); }, []);
 
-  async function checkJigsaw() {
-    try {
-      const snap = await getDocs(query(collection(db, 'jigsawActivities'), where('isActive', '==', true), limit(1)));
-      setJigsawActive(!snap.empty);
-    } catch { setJigsawActive(false); }
-  }
+  // JIGSAW DISABLED — uncomment to re-enable
+  // async function checkJigsaw() {
+  //   try {
+  //     const snap = await getDocs(query(collection(db, 'jigsawActivities'), where('isActive', '==', true), limit(1)));
+  //     setJigsawActive(!snap.empty);
+  //   } catch { setJigsawActive(false); }
+  // }
 
   async function loadUnviewed() {
     try {
@@ -162,16 +164,18 @@ export default function StudentApp() {
           <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: 'var(--bg-card)', padding: '0 16px' }}>
             <NavTab to="/" label="Assignments" />
             <NavTab to="/marked" label="Submissions" badge={unviewedCount} />
-            {jigsawActive && <NavTab to="/jigsaw" label="🧩 Jigsaw" />}
+            {/* JIGSAW DISABLED — uncomment to re-enable */}
+            {/* {jigsawActive && <NavTab to="/jigsaw" label="🧩 Jigsaw" />} */}
           </div>
 
           <Routes>
-            <Route path="/"                      element={<AssignmentList section={enrollment} jigsawActive={jigsawActive} />} />
+            <Route path="/"                      element={<AssignmentList section={enrollment} />} />
             <Route path="/submit/:assignmentId"  element={<SubmissionPage />} />
             <Route path="/debate/:assignmentId"  element={<DebatePage />} />
             <Route path="/marked"                element={<MarkedList />} />
             <Route path="/marked/:submissionId"  element={<MarkedDetail />} />
-            {jigsawActive && <Route path="/jigsaw/*" element={<JigsawApp />} />}
+            {/* JIGSAW DISABLED — uncomment to re-enable */}
+            {/* {jigsawActive && <Route path="/jigsaw/*" element={<JigsawApp />} />} */}
             <Route path="*"                      element={<Navigate to="/" />} />
           </Routes>
         </>

@@ -7,7 +7,7 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../auth/ThemeContext';
-import DOMPurify from 'dompurify';
+
 import { isPastCutoff, msUntilCutoff } from '../utils/cutoff';
 import '../styles/submission.css';
 
@@ -46,6 +46,7 @@ export default function SubmissionPage() {
   const [isResubmission, setIsResubmission] = useState(false);
   const [submitting,     setSubmitting]     = useState(false);
   const [showConfirm,    setShowConfirm]    = useState(false);
+  const [clearConfirm,   setClearConfirm]   = useState(false);
 
   // Ask Mr. McRae modal
   const [askModal,   setAskModal]   = useState(false);
@@ -114,6 +115,13 @@ export default function SubmissionPage() {
     const html  = editorRef.current.innerHTML;
     const plain = editorRef.current.innerText || '';
     const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
+    // Safety guard: never overwrite a longer saved draft with a shorter one.
+    // This prevents a partially-hydrated page from clobbering real work.
+    const savedWc = draftData?.wordCount ?? 0;
+    if (savedWc > 50 && wc < savedWc * 0.5) {
+      console.warn(`flushSave blocked: editor has ${wc} words but Firestore has ${savedWc}. Possible unhydrated save.`);
+      return;
+    }
     const integrityLog = calculateIntegrity(wc);
     // Fire-and-forget — we can't await in beforeunload
     setDoc(docRef, {
@@ -124,7 +132,7 @@ export default function SubmissionPage() {
       setSaveStatus('saved');
       setLastSaved(new Date());
     }).catch(err => console.error('Flush save failed:', err));
-  }, [assignmentId, user.email]);
+  }, [assignmentId, user.email, draftData]);
 
   // ── localStorage backup ──────────────────────────────────────────────────
   const localBackupKey = `draft__${assignmentId}__${user.email}`;
@@ -350,7 +358,15 @@ export default function SubmissionPage() {
       const html  = editorRef.current.innerHTML;
       const plain = editorRef.current.innerText || '';
       const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
-      
+
+      // Safety guard: never overwrite a longer saved draft with a shorter one.
+      const savedWc = draftData?.wordCount ?? 0;
+      if (savedWc > 50 && wc < savedWc * 0.5) {
+        console.warn(`scheduleSave blocked: editor has ${wc} words but Firestore has ${savedWc}. Possible unhydrated save.`);
+        setSaveStatus('idle');
+        return;
+      }
+
       const integrityLog = calculateIntegrity(wc);
 
       try {
@@ -370,7 +386,7 @@ export default function SubmissionPage() {
         setSaveStatus('idle');
       }
     }, 5000);
-  }, [assignmentId, user.email]);
+  }, [assignmentId, user.email, draftData]);
 
   // ── Immediate save (no debounce) — used by cutoff kickout ─────────────────
   const saveNow = useCallback(async () => {
@@ -379,6 +395,12 @@ export default function SubmissionPage() {
     const html  = editorRef.current.innerHTML;
     const plain = editorRef.current.innerText || '';
     const wc    = plain.trim().split(/\s+/).filter(Boolean).length;
+    // Safety guard: never overwrite a longer saved draft with a shorter one.
+    const savedWc = draftData?.wordCount ?? 0;
+    if (savedWc > 50 && wc < savedWc * 0.5) {
+      console.warn(`saveNow blocked: editor has ${wc} words but Firestore has ${savedWc}.`);
+      return;
+    }
     try {
       await setDoc(docRef, {
         response: html, plainResponse: plain.trim(), wordCount: wc,
@@ -387,7 +409,31 @@ export default function SubmissionPage() {
       setSaveStatus('saved');
       setLastSaved(new Date());
     } catch (err) { console.error('Force save failed:', err); }
-  }, [assignmentId, user.email]);
+  }, [assignmentId, user.email, draftData]);
+
+  // ── Clear essay (intentional start-fresh, bypasses guard) ──────────────
+  const handleClearEssay = async () => {
+    setClearConfirm(false);
+    if (!editorRef.current) return;
+    // Wipe the editor
+    editorRef.current.innerHTML = '';
+    setWordCount(0);
+    dirtyRef.current = false;
+    clearTimeout(saveTimer.current);
+    // Force-save empty content, intentionally bypassing the regression guard
+    try {
+      await setDoc(docRef, {
+        response: '', plainResponse: '', wordCount: 0,
+        lastSaved: serverTimestamp(),
+      }, { merge: true });
+      // Update local draftData so the guard resets to 0
+      setDraftData(prev => ({ ...prev, wordCount: 0, response: '', plainResponse: '' }));
+      try { localStorage.removeItem(localBackupKey); } catch {}
+      setSaveStatus('saved');
+      setLastSaved(new Date());
+    } catch (err) { console.error('Clear save failed:', err); }
+  };
+
 
   const handleKeyDown = (e) => {
     if (e.key === 'Tab') {
@@ -512,13 +558,32 @@ export default function SubmissionPage() {
     };
 
     rec.onerror = (e) => {
-      if (e.error !== 'aborted') console.error('Speech error:', e.error);
+      // 'aborted' means we called .stop() ourselves — not an error
+      if (e.error === 'aborted') return;
+
+      const messages = {
+        'network':
+          "Speech-to-text sends audio to Google's servers, and it looks like the school network is blocking it.\n\nTry connecting to a personal hotspot, or ask Mr. McRae.",
+        'not-allowed':
+          "Microphone access was blocked.\n\nIn Chrome: click the 🔒 lock icon in the address bar → Site settings → Microphone → Allow, then refresh the page.",
+        'no-speech':
+          "No speech was detected. Make sure your microphone is picking up sound and try again.",
+        'audio-capture':
+          "Your microphone couldn't be accessed — it may be in use by another app (Zoom, Teams, Discord, etc.).\n\nClose other apps using the microphone and try again.",
+        'service-not-allowed':
+          "Speech recognition isn't permitted here. Try refreshing the page.",
+      };
+
+      const msg = messages[e.error]
+        || `Speech recognition stopped (error: ${e.error}).\n\nTry refreshing the page.`;
+      alert('🎤 Microphone issue\n\n' + msg);
     };
 
     rec.onend = () => {
       setIsListening(false);
       recognitionRef.current = null;
     };
+
 
     recognitionRef.current = rec;
     rec.start();
@@ -552,6 +617,9 @@ export default function SubmissionPage() {
       setIsRevisionMode(false);
       dirtyRef.current = false;
       try { localStorage.removeItem(localBackupKey); } catch {}
+    } catch (err) {
+      console.error('Submit failed:', err);
+      alert('Failed to submit. Your work is saved — please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -588,6 +656,9 @@ export default function SubmissionPage() {
       setTimeout(() => {
         setAskModal(false); setAskSent(false); setAskMessage(''); setAskType('come');
       }, 1800);
+    } catch (err) {
+      console.error('Help request failed:', err);
+      alert('Failed to send help request. Please try again.');
     } finally { setAskSending(false); }
   };
 
@@ -877,6 +948,19 @@ export default function SubmissionPage() {
                   >
                     ❓ Spellcheck broken?
                   </button>
+                  {(draftData?.wordCount ?? 0) > 50 && (
+                    <>
+                      <div className="editor-toolbar__divider" />
+                      <button
+                        className="editor-toolbar__btn"
+                        style={{ fontSize: 11, color: 'var(--danger)', opacity: 0.75 }}
+                        onMouseDown={e => { e.preventDefault(); setClearConfirm(true); }}
+                        title="Clear your essay and start from scratch"
+                      >
+                        🗑 Start fresh
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 {/* Editable area */}
@@ -980,6 +1064,7 @@ export default function SubmissionPage() {
       )}
 
       {/* Confirm Submit Modal */}
+      {/* Submit confirmation modal */}
       {showConfirm && (
         <div className="modal-overlay" onClick={() => setShowConfirm(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -995,6 +1080,28 @@ export default function SubmissionPage() {
                 disabled={submitting}
               >
                 {submitting ? 'Submitting…' : 'Yes, submit'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Essay confirmation modal */}
+      {clearConfirm && (
+        <div className="modal-overlay" onClick={() => setClearConfirm(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3 className="modal-title">Start fresh?</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: '8px 0 0' }}>
+              This will permanently delete everything you've written and cannot be undone.
+            </p>
+            <div className="modal-footer" style={{ marginTop: 20 }}>
+              <button className="btn btn--secondary btn--sm" onClick={() => setClearConfirm(false)}>Cancel</button>
+              <button
+                className="btn btn--sm"
+                style={{ background: 'var(--danger)', color: '#fff' }}
+                onClick={handleClearEssay}
+              >
+                Yes, delete my essay
               </button>
             </div>
           </div>
